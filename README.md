@@ -1,24 +1,17 @@
 # Bard::Backup
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/bard/backup`. To experiment with that code, run `bin/console` for an interactive prompt.
+Bard::Backup does 3 things in a bard project
+1. Takes a database dump and uploads it to our s3 bucket
+2. Deletes old backups using a backoff heuristic: 48 hours, 60 days, 48 months, then yearly
+3. Raises an error if we don't have a backup from the previous hour
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
-
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
-
 ## Usage
 
-TODO: Write usage instructions here
+Run with `Bard::Backup.call s3_path, access_key: "...", secret_key: "..."`
+
+Or just run via the `bard-rake` gem: `rake db:backup`, which wires up the above for you.
 
 ## Development
 
