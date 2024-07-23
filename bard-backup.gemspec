@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require_relative "lib/bard/backup/version"
+
 Gem::Specification.new do |spec|
   spec.name = "bard-backup"
-  spec.version = "0.1.0"
+  spec.version = Bard::Backup::VERSION
   spec.authors = ["Micah Geisel"]
   spec.email = ["micah@botandrose.com"]
 
