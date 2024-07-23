@@ -15,8 +15,3 @@ RSpec.describe Bard::Backup do
   end
 end
 
-class FakeBackhoe
-  def dump path
-    File.write(path, "DATA")
-  end
-end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "bard/backup"
+require_relative "./support/fake_backhoe"
 require "json"
 require "debug"
 
