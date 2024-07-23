@@ -3,17 +3,16 @@
 require "net/http"
 require "openssl"
 require "base64"
+require "time"
 require "backhoe"
 
 module Bard
-  class Backup < Struct.new(:s3_path, :access_key, :secret_key)
-    def self.call s3_path, access_key:, secret_key:
-      new(s3_path, access_key, secret_key).call
+  class Backup < Struct.new(:s3_path, :filename, :access_key, :secret_key)
+    def self.call s3_path, access_key:, secret_key:, filename: "#{Time.now.utc.iso8601}.sql.gz"
+      new(s3_path, filename, access_key, secret_key).call
     end
 
     def call
-      @time = Time.now
-
       Backhoe.dump path
 
       self.full_s3_path = "/#{s3_path}/#{filename}"
@@ -69,7 +68,7 @@ module Bard
     end
 
     def date
-      @time.rfc2822
+      Time.now.rfc2822
     end
 
     def acl
@@ -82,10 +81,6 @@ module Bard
 
     def path
       "/tmp/#{filename}"
-    end
-
-    def filename
-      "#{@time.utc.iso8601}.sql.gz"
     end
   end
 end
