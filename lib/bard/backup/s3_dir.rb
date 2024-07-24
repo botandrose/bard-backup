@@ -21,16 +21,20 @@ module Bard
         })
       end
 
+      def delete keys
+        objects_to_delete = Array(keys).map { |key| { key: key } }
+        client.delete_objects({
+          bucket: bucket_name,
+          delete: {
+            objects: objects_to_delete,
+            quiet: true,
+          }
+        })
+      end
+
       def empty!
         keys.each_slice(1000) do |key_batch|
-          objects_to_delete = key_batch.map { |key| { key: key } }
-          client.delete_objects({
-            bucket: bucket_name,
-            delete: {
-              objects: objects_to_delete,
-              quiet: true,
-            }
-          })
+          delete key_batch
         end
       end
 
