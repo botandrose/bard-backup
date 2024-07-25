@@ -12,58 +12,27 @@ module Bard
       def keys_to_delete
         s3_dir.keys.select do |key|
           [
-            CurrentFilter.new(now),
-            HourlyFilter.new(now, 72),
-            DailyFilter.new(now, 60),
-            WeeklyFilter.new(now, 52),
-            MonthlyFilter.new(now, 48),
-            YearlyFilter.new(now),
+            Filter.new(now, 72, :hours),
+            Filter.new(now, 60, :days),
+            Filter.new(now, 52, :weeks),
+            Filter.new(now, 48, :months),
+            Filter.new(now, 100, :years),
           ].all? { |filter| !filter.cover?(key) }
         end
       end
 
-      class BaseFilter < Struct.new(:now, :limit)
+      class Filter < Struct.new(:now, :limit, :unit)
         def cover? key
           remote = DateTime.parse(key).beginning_of_hour
-          (limit || 1).times.any? do |count|
-            remote == for_count(count)
+          limit.times.any? do |count|
+            remote == ago(count)
           end
         end
-      end
 
-      class CurrentFilter < BaseFilter
-        def for_count count
-          now.beginning_of_hour
-        end
-      end
+        private
 
-      class HourlyFilter < BaseFilter
-        def for_count count
-          now.beginning_of_hour - count.hours
-        end
-      end
-
-      class DailyFilter < BaseFilter
-        def for_count count
-          now.beginning_of_day - count.days
-        end
-      end
-
-      class WeeklyFilter < BaseFilter
-        def for_count count
-          now.beginning_of_week - count.weeks
-        end
-      end
-
-      class MonthlyFilter < BaseFilter
-        def for_count count
-          now.beginning_of_month - count.month
-        end
-      end
-
-      class YearlyFilter < BaseFilter
-        def for_count count
-          now.beginning_of_year - count.years
+        def ago count
+          now.send(:"beginning_of_#{unit.to_s.singularize}") - count.send(unit)
         end
       end
     end

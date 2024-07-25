@@ -1,8 +1,8 @@
 require "bard/backup/deleter"
 
-RSpec.describe Bard::Backup::Deleter::DailyFilter do
+RSpec.describe Bard::Backup::Deleter::Filter do
   subject do
-    described_class.new(time, 3)
+    described_class.new(time, 3, :days)
   end
 
   let(:time) { Time.parse("2020-06-19T06:01:12Z") }
