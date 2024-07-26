@@ -22,6 +22,7 @@ module Bard
       end
 
       def delete keys
+        return if keys.empty?
         objects_to_delete = Array(keys).map { |key| { key: key } }
         client.delete_objects({
           bucket: bucket_name,
