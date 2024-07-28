@@ -3,7 +3,7 @@ require "rexml"
 
 module Bard
   module Backup
-    class S3Dir < Data.define(:path, :access_key, :secret_key)
+    class S3Dir < Data.define(:path, :access_key, :secret_key, :region)
       def keys
         response = client.list_objects_v2({
           bucket: bucket_name,
@@ -51,7 +51,7 @@ module Bard
 
       def client
         Aws::S3::Client.new({
-          region: "us-west-2",
+          region: region,
           access_key_id: access_key,
           secret_access_key: secret_key,
         })
