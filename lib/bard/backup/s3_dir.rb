@@ -16,7 +16,7 @@ module Bard
       def put file_path, body: File.read(file_path)
         client.put_object({
           bucket: bucket_name,
-          key: "#{folder_prefix}/#{File.basename(file_path)}",
+          key: [folder_prefix, File.basename(file_path)].compact.join("/"),
           body: body,
         })
       end
@@ -44,6 +44,7 @@ module Bard
       end
 
       def folder_prefix
+        return nil if !path.include?("/")
         path.split("/")[1..].join("/")
       end
 
