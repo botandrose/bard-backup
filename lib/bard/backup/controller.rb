@@ -5,7 +5,7 @@ module Bard
         filename = "#{now.iso8601}.sql.gz"
         path = "/tmp/#{filename}"
         dumper.dump path
-        s3_dir.put path
+        s3_dir.mv path
       end
     end
   end

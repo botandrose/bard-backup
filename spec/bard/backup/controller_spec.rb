@@ -10,7 +10,7 @@ RSpec.describe Bard::Backup::Controller do
   it "works" do
     subject.call
     expect(dumper).to have_received(:dump).with("/tmp/2020-04-20T12:30:00Z.sql.gz")
-    expect(s3_dir).to have_received(:put).with("/tmp/2020-04-20T12:30:00Z.sql.gz")
+    expect(s3_dir).to have_received(:mv).with("/tmp/2020-04-20T12:30:00Z.sql.gz")
   end
 end
 

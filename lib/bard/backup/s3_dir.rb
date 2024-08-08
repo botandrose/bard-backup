@@ -21,6 +21,11 @@ module Bard
         })
       end
 
+      def mv file_path, body: File.read(file_path)
+        put file_path, body: body
+        FileUtils.rm file_path
+      end
+
       def delete keys
         return if keys.empty?
         objects_to_delete = Array(keys).map { |key| { key: key } }
