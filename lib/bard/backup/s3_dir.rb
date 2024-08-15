@@ -21,6 +21,15 @@ module Bard
         })
       end
 
+      def presigned_url file_path
+        presigner = Aws::S3::Presigner.new(client: client)
+        presigner.presigned_url(
+          :put_object,
+          bucket: bucket_name,
+          key: [folder_prefix, File.basename(file_path)].compact.join("/"),
+        )
+      end
+
       def mv file_path, body: File.read(file_path)
         put file_path, body: body
         FileUtils.rm file_path
