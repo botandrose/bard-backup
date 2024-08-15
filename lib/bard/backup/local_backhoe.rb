@@ -1,10 +1,12 @@
+require "backhoe"
+
 module Bard
   module Backup
-    class Controller < Struct.new(:dumper, :s3_dir, :now)
-      def call
+    class LocalBackhoe
+      def self.call s3_dir, now
         filename = "#{now.iso8601}.sql.gz"
         path = "/tmp/#{filename}"
-        dumper.dump path
+        Backhoe.dump path
         s3_dir.mv path
       end
     end

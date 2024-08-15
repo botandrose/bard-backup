@@ -1,11 +1,13 @@
-RSpec.describe Bard::Backup::Controller do
+RSpec.describe Bard::Backup::LocalBackhoe do
   let(:dumper) { spy }
   let(:s3_dir) { spy }
   let(:now) { Time.parse("2020-04-20T12:30:00Z") }
 
   subject do
-    described_class.new(dumper, s3_dir, now)
+    described_class.call(s3_dir, now)
   end
+
+  before { stub_const "Backhoe", dumper }
 
   it "works" do
     subject.call
