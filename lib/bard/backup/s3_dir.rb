@@ -4,13 +4,15 @@ require "rexml"
 module Bard
   module Backup
     class S3Dir < Data.define(:path, :access_key, :secret_key, :region)
-      def keys
+      def files
         response = client.list_objects_v2({
           bucket: bucket_name,
           prefix: folder_prefix,
         })
         raise if response.is_truncated
-        response.contents.map(&:key)
+        response.contents.map do |object|
+          object.key.sub("#{folder_prefix}/", "")
+        end
       end
 
       def put file_path, body: File.read(file_path)
@@ -35,9 +37,11 @@ module Bard
         FileUtils.rm file_path
       end
 
-      def delete keys
-        return if keys.empty?
-        objects_to_delete = Array(keys).map { |key| { key: key } }
+      def delete file_paths
+        return if file_paths.empty?
+        objects_to_delete = Array(file_paths).map do |file_path|
+          { key: [folder_prefix, File.basename(file_path)].compact.join("/") }
+        end
         client.delete_objects({
           bucket: bucket_name,
           delete: {
@@ -48,8 +52,8 @@ module Bard
       end
 
       def empty!
-        keys.each_slice(1000) do |key_batch|
-          delete key_batch
+        files.each_slice(1000) do |batch|
+          delete batch
         end
       end
 

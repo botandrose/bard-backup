@@ -6,24 +6,24 @@ module Bard
   module Backup
     class Deleter < Struct.new(:s3_dir, :now)
       def call
-        s3_dir.delete keys_to_delete
+        s3_dir.delete files_to_delete
       end
 
-      def keys_to_delete
-        s3_dir.keys.select do |key|
+      def files_to_delete
+        s3_dir.files.select do |file|
           [
             Filter.new(now, 72, :hours),
             Filter.new(now, 60, :days),
             Filter.new(now, 52, :weeks),
             Filter.new(now, 48, :months),
             Filter.new(now, 100, :years),
-          ].all? { |filter| !filter.cover?(key) }
+          ].all? { |filter| !filter.cover?(file) }
         end
       end
 
       class Filter < Struct.new(:now, :limit, :unit)
-        def cover? key
-          remote = DateTime.parse(key).beginning_of_hour
+        def cover? file
+          remote = DateTime.parse(file).beginning_of_hour
           limit.times.any? do |count|
             remote == ago(count)
           end
