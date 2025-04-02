@@ -12,11 +12,11 @@ module Bard
       def files_to_delete
         s3_dir.files.select do |file|
           [
-            Filter.new(now, 72, :hours),
-            Filter.new(now, 60, :days),
-            Filter.new(now, 52, :weeks),
-            Filter.new(now, 48, :months),
-            Filter.new(now, 100, :years),
+            Filter.new(now, 48, :hours),
+            Filter.new(now, 30, :days),
+            Filter.new(now, 26, :weeks),
+            Filter.new(now, 24, :months),
+            Filter.new(now, 25, :years),
           ].all? { |filter| !filter.cover?(file) }
         end
       end
