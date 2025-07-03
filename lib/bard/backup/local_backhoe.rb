@@ -1,7 +1,7 @@
 require "backhoe"
 
 module Bard
-  module Backup
+  class Backup
     class LocalBackhoe
       def self.call s3_dir, now
         filename = "#{now.iso8601}.sql.gz"

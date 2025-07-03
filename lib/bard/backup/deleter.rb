@@ -3,7 +3,7 @@ require "active_support/core_ext/date_time/calculations"
 require "active_support/core_ext/integer/time"
 
 module Bard
-  module Backup
+  class Backup
     class Deleter < Struct.new(:s3_dir, :now)
       def call
         s3_dir.delete files_to_delete

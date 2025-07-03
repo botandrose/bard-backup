@@ -2,8 +2,13 @@ require "aws-sdk-s3"
 require "rexml"
 
 module Bard
-  module Backup
+  class Backup
     class S3Dir < Data.define(:endpoint, :path, :access_key, :secret_key, :region)
+      def initialize **kwargs
+        kwargs[:endpoint] ||= "https://s3.#{kwargs[:region]}.amazonaws.com"
+        super
+      end
+
       def files
         response = client.list_objects_v2({
           bucket: bucket_name,
@@ -79,4 +84,3 @@ module Bard
     end
   end
 end
-
