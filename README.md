@@ -2,7 +2,7 @@
 
 Bard::Backup does 3 things in a bard project
 1. Takes a database dump and uploads it to our s3 bucket
-2. Deletes old backups using a backoff heuristic: 72 hours, 60 days, 52 weeks, 48 months, then yearly
+2. Deletes old backups using a backoff heuristic: 48 hours, 30 days, 26 weeks, 24 months, then yearly
 3. Raises an error if we don't have a backup from the previous hour
 
 ## Installation

@@ -12,7 +12,9 @@ RSpec.describe Bard::Backup do
   end
 
   it "uploads a new backhoe dump to the bucket" do
-    described_class.call s3_dir.path, **credentials, now: now
+    described_class.call path: s3_dir.path, now: now, **credentials
+    pp s3_dir.files
+    pp AFTER_FILES.split("\n")
     expect(s3_dir.files).to eq(AFTER_FILES.split("\n"))
   end
 end
@@ -505,37 +507,12 @@ AFTER_FILES = <<~TEXT
   2023-05-01T00:00:06Z.sql.gz
   2023-06-01T00:00:06Z.sql.gz
   2023-07-01T00:00:05Z.sql.gz
-  2023-07-31T00:00:06Z.sql.gz
   2023-08-01T00:00:06Z.sql.gz
-  2023-08-07T00:00:08Z.sql.gz
-  2023-08-14T00:00:06Z.sql.gz
-  2023-08-21T00:00:07Z.sql.gz
-  2023-08-28T00:00:07Z.sql.gz
   2023-09-01T00:00:06Z.sql.gz
-  2023-09-04T00:00:07Z.sql.gz
-  2023-09-11T00:00:08Z.sql.gz
-  2023-09-18T00:00:10Z.sql.gz
-  2023-09-25T00:00:13Z.sql.gz
   2023-10-01T00:00:07Z.sql.gz
-  2023-10-02T00:00:10Z.sql.gz
-  2023-10-09T00:00:11Z.sql.gz
-  2023-10-16T00:00:14Z.sql.gz
-  2023-10-23T00:00:08Z.sql.gz
-  2023-10-30T00:00:07Z.sql.gz
   2023-11-01T00:00:06Z.sql.gz
-  2023-11-06T00:00:13Z.sql.gz
-  2023-11-13T00:00:12Z.sql.gz
-  2023-11-20T00:00:09Z.sql.gz
-  2023-11-27T00:00:09Z.sql.gz
   2023-12-01T00:00:07Z.sql.gz
-  2023-12-04T00:00:08Z.sql.gz
-  2023-12-11T00:00:09Z.sql.gz
-  2023-12-18T00:00:08Z.sql.gz
-  2023-12-25T00:00:08Z.sql.gz
   2024-01-01T00:00:11Z.sql.gz
-  2024-01-08T00:00:09Z.sql.gz
-  2024-01-15T00:00:10Z.sql.gz
-  2024-01-22T00:00:10Z.sql.gz
   2024-01-29T00:00:10Z.sql.gz
   2024-02-01T00:00:09Z.sql.gz
   2024-02-05T00:00:07Z.sql.gz
@@ -550,9 +527,7 @@ AFTER_FILES = <<~TEXT
   2024-04-01T00:00:08Z.sql.gz
   2024-04-08T00:00:07Z.sql.gz
   2024-04-15T00:00:07Z.sql.gz
-  2024-06-23T00:00:05Z.sql.gz
   2024-06-24T00:00:06Z.sql.gz
-  2024-06-25T00:00:06Z.sql.gz
   2024-06-26T00:00:07Z.sql.gz
   2024-06-27T00:00:05Z.sql.gz
   2024-06-28T00:00:05Z.sql.gz
@@ -580,30 +555,7 @@ AFTER_FILES = <<~TEXT
   2024-07-20T00:00:06Z.sql.gz
   2024-07-21T00:00:06Z.sql.gz
   2024-07-22T00:00:07Z.sql.gz
-  2024-07-22T13:00:02Z.sql.gz
-  2024-07-22T14:00:03Z.sql.gz
-  2024-07-22T15:00:03Z.sql.gz
-  2024-07-22T16:00:03Z.sql.gz
-  2024-07-22T17:00:03Z.sql.gz
-  2024-07-22T18:00:02Z.sql.gz
-  2024-07-22T19:00:02Z.sql.gz
-  2024-07-22T20:00:03Z.sql.gz
-  2024-07-22T21:00:03Z.sql.gz
-  2024-07-22T22:00:03Z.sql.gz
-  2024-07-22T23:00:03Z.sql.gz
   2024-07-23T00:00:05Z.sql.gz
-  2024-07-23T01:00:03Z.sql.gz
-  2024-07-23T02:00:03Z.sql.gz
-  2024-07-23T03:00:02Z.sql.gz
-  2024-07-23T04:00:03Z.sql.gz
-  2024-07-23T05:00:03Z.sql.gz
-  2024-07-23T06:00:03Z.sql.gz
-  2024-07-23T07:00:03Z.sql.gz
-  2024-07-23T08:00:03Z.sql.gz
-  2024-07-23T09:00:02Z.sql.gz
-  2024-07-23T10:00:03Z.sql.gz
-  2024-07-23T11:00:03Z.sql.gz
-  2024-07-23T12:00:03Z.sql.gz
   2024-07-23T13:00:02Z.sql.gz
   2024-07-23T14:00:03Z.sql.gz
   2024-07-23T15:00:03Z.sql.gz
