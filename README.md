@@ -9,7 +9,7 @@ Bard::Backup does 3 things in a bard project
 
 ## Usage
 
-Run with `Bard::Backup.call path: "s3_bucket/optional_subfolder", access_key: "...", secret_key: "...", region: "..."`
+Run with `Bard::Backup.call path: "s3_bucket/optional_subfolder", access_key_id: "...", secret_access_key: "...", region: "..."`
 
 Or just run via the `bard-rake` gem: `rake db:backup`, which wires up the above for you.
 

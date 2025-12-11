@@ -30,7 +30,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "backhoe"
   spec.add_dependency "aws-sdk-s3", "~>1.0"
   spec.add_dependency "rexml"
-  spec.add_dependency "activesupport"
+  spec.add_dependency "rails"
+  spec.add_dependency "bard"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html

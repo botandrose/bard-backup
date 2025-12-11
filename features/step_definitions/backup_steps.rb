@@ -8,7 +8,7 @@ end
 
 When("I run the backup at {string}") do |timestamp|
   stub_const("Backhoe", FakeBackhoe.new)
-  Bard::Backup.call(path: @s3_dir.path, now: Time.parse(timestamp), **credentials)
+  Bard::Backup.create!(type: :s3, path: @s3_dir.path, now: Time.parse(timestamp), **credentials)
 end
 
 Then("the bucket should contain the backups from {string}") do |fixture_path|

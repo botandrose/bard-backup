@@ -3,7 +3,7 @@ require "rexml"
 
 module Bard
   class Backup
-    class S3Dir < Data.define(:endpoint, :path, :access_key, :secret_key, :region)
+    class S3Dir < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region)
       def initialize **kwargs
         kwargs[:endpoint] ||= "https://s3.#{kwargs[:region]}.amazonaws.com"
         super
@@ -77,8 +77,8 @@ module Bard
         Aws::S3::Client.new({
           endpoint: endpoint,
           region: region,
-          access_key_id: access_key,
-          secret_access_key: secret_key,
+          access_key_id: access_key_id,
+          secret_access_key: secret_access_key,
         })
       end
     end
