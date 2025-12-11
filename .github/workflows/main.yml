@@ -25,5 +25,15 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
+    - name: Create credentials file
+      run: |
+        mkdir -p spec/support
+        cat > spec/support/credentials.json << EOF
+        {
+          "access_key_id": "${{ secrets.AWS_ACCESS_KEY_ID }}",
+          "secret_access_key": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
+          "region": "${{ secrets.AWS_REGION }}"
+        }
+        EOF
     - name: Run the default task
       run: bundle exec rake
