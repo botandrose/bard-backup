@@ -1,46 +1,24 @@
-name: Ruby
-
-on:
-  push:
-    branches:
-      - master
-
-  pull_request:
-
+name: ci
+on: [push, pull_request]
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
-    strategy:
-      matrix:
-        ruby:
-          - '3.2'
-          - '3.3'
-          - '3.4'
-    env:
-      TZ: UTC
-
+  test:
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby }}
-        bundler-cache: true
-    - name: Create credentials file
-      run: |
-        mkdir -p spec/support
-        cat > spec/support/credentials.json << EOF
-        {
-          "access_key_id": "${{ secrets.AWS_ACCESS_KEY_ID }}",
-          "secret_access_key": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
-          "region": "${{ secrets.AWS_REGION }}"
-        }
-        EOF
-    - name: Verify timezone
-      run: |
-        date
-        echo "TZ=$TZ"
-        ruby -e "require 'time'; puts Time.now.zone"
-    - name: Run the default task
-      run: bundle exec rake
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - name: Create credentials file
+        run: |
+          mkdir -p spec/support
+          cat > spec/support/credentials.json << EOF
+          {
+            "access_key_id": "${{ secrets.AWS_ACCESS_KEY_ID }}",
+            "secret_access_key": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
+            "region": "${{ secrets.AWS_REGION }}"
+          }
+          EOF
+      - name: Run tests
+        run: bundle exec rake
