@@ -17,6 +17,8 @@ jobs:
           - '3.2'
           - '3.3'
           - '3.4'
+    env:
+      TZ: UTC
 
     steps:
     - uses: actions/checkout@v3
@@ -35,5 +37,10 @@ jobs:
           "region": "${{ secrets.AWS_REGION }}"
         }
         EOF
+    - name: Verify timezone
+      run: |
+        date
+        echo "TZ=$TZ"
+        ruby -e "require 'time'; puts Time.now.zone"
     - name: Run the default task
       run: bundle exec rake
