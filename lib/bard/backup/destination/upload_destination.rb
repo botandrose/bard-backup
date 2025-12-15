@@ -43,9 +43,9 @@ module Bard
 
       def urls
         @urls ||= begin
-          Array(config[:urls]).compact
-          raise Error, "No URLs provided" if urls.empty?
-          urls
+          url_list = Array(config[:urls]).compact
+          raise Error, "No URLs provided" if url_list.empty?
+          url_list
         end
       end
 

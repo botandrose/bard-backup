@@ -9,9 +9,18 @@ module Bard
         destination_hashes = [config]
       end
       destination_hashes ||= Bard::Config.current.backup.destinations
-      Array(destination_hashes).each do |hash|
-        Destination.build(hash).call
+
+      destinations = if destination_hashes.is_a?(Hash)
+        [destination_hashes]
+      else
+        Array(destination_hashes)
       end
+
+      result = nil
+      destinations.each do |hash|
+        result = Destination.build(hash).call
+      end
+      result
     end
 
     def self.latest
