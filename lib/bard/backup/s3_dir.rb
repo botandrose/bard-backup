@@ -1,11 +1,13 @@
 require "aws-sdk-s3"
 require "rexml"
+require "bard/backup/encryptor"
 
 module Bard
   class Backup
-    class S3Dir < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region)
+    class S3Dir < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region, :encryption_key)
       def initialize **kwargs
         kwargs[:endpoint] ||= "https://s3.#{kwargs[:region]}.amazonaws.com"
+        kwargs[:encryption_key] ||= nil
         super
       end
 
@@ -21,6 +23,7 @@ module Bard
       end
 
       def put file_path, body: File.read(file_path)
+        body = encryptor.encrypt(body) if encryptor
         client.put_object({
           bucket: bucket_name,
           key: [folder_prefix, File.basename(file_path)].compact.join("/"),
@@ -72,6 +75,10 @@ module Bard
       end
 
       private
+
+      def encryptor
+        Encryptor.new(encryption_key) if encryption_key
+      end
 
       def client
         Aws::S3::Client.new({

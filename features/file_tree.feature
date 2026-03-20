@@ -25,6 +25,16 @@ Feature: Syncing file trees to S3
       | key                 | content |
       | data/images/cat.jpg | catdata |
 
+  Scenario: Encrypted file tree sync
+    Given the S3 bucket "bard-backup-test/test-file-tree-enc" is empty
+    And the local data directory "data/images" contains:
+      | path    | content |
+      | cat.jpg | catdata |
+    When I sync file trees for data paths "data/images" with encryption key "test-master-key-0123456789abcdef"
+    Then the S3 bucket "bard-backup-test/test-file-tree-enc" should contain encrypted:
+      | key                 | content |
+      | data/images/cat.jpg | catdata |
+
   Scenario: Incremental sync uploads only changes and deletes removed files
     Given the S3 bucket "bard-backup-test/test-file-tree" is empty
     And the local data directory "data/images" contains:

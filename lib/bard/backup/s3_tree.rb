@@ -1,11 +1,13 @@
 require "aws-sdk-s3"
+require "bard/backup/encryptor"
 
 module Bard
   class Backup
-    class S3Tree < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region, :session_token)
+    class S3Tree < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region, :session_token, :encryption_key)
       def initialize(**kwargs)
         kwargs[:endpoint] ||= "https://s3.#{kwargs[:region]}.amazonaws.com"
         kwargs[:session_token] ||= nil
+        kwargs[:encryption_key] ||= nil
         super
       end
 
@@ -33,10 +35,12 @@ module Bard
       end
 
       def put_file(local_path, remote_key)
+        body = File.binread(local_path)
+        body = encryptor.encrypt(body) if encryptor
         client.put_object({
           bucket: bucket_name,
           key: [folder_prefix, remote_key].compact.join("/"),
-          body: File.open(local_path, "rb"),
+          body: body,
         })
       end
 
@@ -45,7 +49,9 @@ module Bard
           bucket: bucket_name,
           key: [folder_prefix, remote_key].compact.join("/"),
         })
-        response.body.read
+        body = response.body.read
+        body = encryptor.decrypt(body) if encryptor
+        body
       end
 
       def delete_keys(keys)
@@ -80,6 +86,10 @@ module Bard
       end
 
       private
+
+      def encryptor
+        Encryptor.new(encryption_key) if encryption_key
+      end
 
       def client
         Aws::S3::Client.new({

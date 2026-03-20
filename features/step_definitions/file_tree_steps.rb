@@ -25,6 +25,17 @@ When("I sync file trees for data paths {string}") do |paths_string|
   )
 end
 
+When("I sync file trees for data paths {string} with encryption key {string}") do |paths_string, key|
+  data_paths = paths_string.split(",")
+  Bard::Backup::FileTree.create!(
+    data_paths: data_paths,
+    project_name: "test-file-tree-enc",
+    bucket: "bard-backup-test",
+    encryption_key: key,
+    **credentials,
+  )
+end
+
 When("I sync file trees for data paths {string} using STS credentials scoped to {string}") do |paths_string, project_name|
   data_paths = paths_string.split(",")
   temp = assume_role_credentials(project_name)
@@ -50,6 +61,19 @@ end
 
 When("I delete the local file {string}") do |path|
   FileUtils.rm(path)
+end
+
+Then("the S3 bucket {string} should contain encrypted:") do |path, table|
+  raw_s3_tree = Bard::Backup::S3Tree.new(path: path, **s3_credentials_for(path))
+  objects = raw_s3_tree.list_objects
+
+  expected_keys = table.hashes.map { |row| row["key"] }.sort
+  expect(objects.keys.sort).to eq(expected_keys)
+
+  table.hashes.each do |row|
+    raw_body = raw_s3_tree.get(row["key"])
+    expect(raw_body).not_to eq(row["content"])
+  end
 end
 
 Then("the S3 bucket {string} should contain:") do |path, table|

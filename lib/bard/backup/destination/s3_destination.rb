@@ -12,7 +12,7 @@ module Bard
       end
 
       def s3_dir
-        @s3_dir ||= S3Dir.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :region))
+        @s3_dir ||= S3Dir.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :region, :encryption_key))
       end
 
       def info

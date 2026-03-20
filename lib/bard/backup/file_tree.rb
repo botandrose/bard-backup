@@ -16,7 +16,7 @@ module Bard
         if s3_config.empty? && defined?(Rails)
           credentials = Rails.application.credentials.bard_backup || []
           credentials = [credentials] if credentials.is_a?(Hash)
-          s3_config = credentials.first&.slice(:access_key_id, :secret_access_key, :region) || {}
+          s3_config = credentials.first&.slice(:access_key_id, :secret_access_key, :region, :encryption_key) || {}
         end
 
         s3_tree = S3Tree.new(path: "#{bucket}/#{project_name}", **s3_config)

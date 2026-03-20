@@ -1,6 +1,7 @@
 require "fileutils"
 require "uri"
 require "net/http"
+require "bard/backup/encryptor"
 
 module Bard
   class Backup
@@ -53,8 +54,12 @@ module Bard
         uri = URI.parse(url)
 
         File.open(file_path, "rb") do |file|
+          body = file.read
+          if config[:encryption_key]
+            body = Encryptor.new(config[:encryption_key]).encrypt(body)
+          end
           request = Net::HTTP::Put.new(uri)
-          request.body = file.read
+          request.body = body
           request.content_type = "application/octet-stream"
 
           response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
