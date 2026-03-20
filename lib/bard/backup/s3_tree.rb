@@ -2,9 +2,10 @@ require "aws-sdk-s3"
 
 module Bard
   class Backup
-    class S3Tree < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region)
+    class S3Tree < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region, :session_token)
       def initialize(**kwargs)
         kwargs[:endpoint] ||= "https://s3.#{kwargs[:region]}.amazonaws.com"
+        kwargs[:session_token] ||= nil
         super
       end
 
@@ -86,7 +87,8 @@ module Bard
           region: region,
           access_key_id: access_key_id,
           secret_access_key: secret_access_key,
-        })
+          session_token: session_token,
+        }.compact)
       end
     end
   end

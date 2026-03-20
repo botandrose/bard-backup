@@ -15,6 +15,16 @@ Feature: Syncing file trees to S3
       | data/images/dog.jpg  | dogdata  |
       | data/docs/readme.txt | hello    |
 
+  Scenario: Sync with STS temporary credentials
+    Given the S3 bucket "bard-data/test-file-tree-sts" is empty
+    And the local data directory "data/images" contains:
+      | path    | content |
+      | cat.jpg | catdata |
+    When I sync file trees for data paths "data/images" using STS credentials scoped to "test-file-tree-sts"
+    Then the S3 bucket "bard-data/test-file-tree-sts" should contain:
+      | key                 | content |
+      | data/images/cat.jpg | catdata |
+
   Scenario: Incremental sync uploads only changes and deletes removed files
     Given the S3 bucket "bard-backup-test/test-file-tree" is empty
     And the local data directory "data/images" contains:
