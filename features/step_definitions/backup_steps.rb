@@ -44,6 +44,12 @@ Then("decrypting the latest backup with key {string} should return the unencrypt
   expect(decrypted).to eq("DATA")
 end
 
+After do
+  if @s3_dir
+    @s3_dir.empty!
+  end
+end
+
 def fixture_lines(path)
   File.read(path).split("\n").map(&:strip)
 end

@@ -9,17 +9,21 @@ module Bard
       DEFAULT_BUCKET = "bard-data"
 
       def self.create!(data_paths: nil, project_name: nil, bucket: DEFAULT_BUCKET, **s3_config)
-        data_paths ||= Bard::Config.current.data
-        project_name ||= Bard::Config.current.project_name
+        bard_config = defined?(Bard::Config) ? Bard::Config.current : nil
+        data_paths ||= bard_config&.data || []
+        project_name ||= bard_config&.project_name
         return if data_paths.empty?
 
         if s3_config.empty? && defined?(Rails)
           credentials = Rails.application.credentials.bard_backup || []
           credentials = [credentials] if credentials.is_a?(Hash)
-          s3_config = credentials.first&.slice(:access_key_id, :secret_access_key, :region, :encryption_key) || {}
+          s3_config = credentials.first&.slice(:access_key_id, :secret_access_key, :region) || {}
         end
 
-        s3_tree = S3Tree.new(path: "#{bucket}/#{project_name}", **s3_config)
+        encryption_key = s3_config.delete(:encryption_key)
+        encryption_key ||= bard_config&.respond_to?(:encryption_key) ? bard_config.encryption_key : nil
+
+        s3_tree = S3Tree.new(path: "#{bucket}/#{project_name}", encryption_key: encryption_key, **s3_config)
         new(s3_tree, data_paths).call
       end
 

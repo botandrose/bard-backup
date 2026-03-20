@@ -14,8 +14,8 @@ module Bard
       def files
         response = client.list_objects_v2({
           bucket: bucket_name,
-          prefix: folder_prefix,
-        })
+          prefix: folder_prefix ? "#{folder_prefix}/" : nil,
+        }.compact)
         raise if response.is_truncated
         response.contents.map do |object|
           object.key.sub("#{folder_prefix}/", "")
