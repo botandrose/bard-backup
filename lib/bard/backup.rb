@@ -1,7 +1,7 @@
 require "bard/backup/destination"
 require "bard/backup/file_tree"
 require "bard/backup/latest_finder"
-require "bard/plugins/backup"
+require "bard"
 require "bard/backup/railtie" if defined?(Rails)
 
 module Bard

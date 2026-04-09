@@ -1,7 +1,6 @@
 require "json"
 require "digest/md5"
 require "bard/backup/s3_tree"
-require "bard/plugins/data"
 
 module Bard
   class Backup
