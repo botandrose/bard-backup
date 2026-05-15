@@ -1,4 +1,4 @@
-require "bard/backup/destination"
+require "bard/backup/database"
 require "bard/backup/file_tree"
 require "bard/backup/latest_finder"
 require "bard"
@@ -6,30 +6,12 @@ require "bard/backup/railtie" if defined?(Rails)
 
 module Bard
   class Backup
+    FILE_TREE_KEYS = [:access_key_id, :secret_access_key, :session_token, :region, :encryption_key].freeze
+
     def self.create!(destination_hashes = nil, **config)
-      if destination_hashes.nil? && !config.empty?
-        destination_hashes = [config]
-      end
-
-      bard_config = defined?(Bard::Config) ? Bard::Config.current : nil
-      destination_hashes ||= bard_config&.backup&.destinations || []
-
-      destinations = if destination_hashes.is_a?(Hash)
-        [destination_hashes]
-      else
-        Array(destination_hashes)
-      end
-
-      encryption_key = bard_config&.respond_to?(:encryption_key) ? bard_config.encryption_key : nil
-      if encryption_key
-        destinations = destinations.map { |h| { encryption_key: encryption_key, **h } }
-      end
-
-      result = nil
-      destinations.each do |hash|
-        result = Destination.build(hash).call
-      end
-      result
+      backup = Database.create!(destination_hashes, **config)
+      FileTree.create!(**config.slice(*FILE_TREE_KEYS))
+      backup
     end
 
     def self.latest

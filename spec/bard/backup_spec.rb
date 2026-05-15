@@ -1,64 +1,77 @@
 require "spec_helper"
 
 RSpec.describe Bard::Backup do
-  before do
-    stub_const("Backhoe", FakeBackhoe.new)
-
-    allow_any_instance_of(Bard::Backup::UploadDestination).to receive(:upload_to_url)
-  end
-
   describe ".create!" do
-    context "when called with a hash as positional argument (bard-api style)" do
-      it "creates a backup without Symbol to Integer conversion error" do
-        backup = described_class.create!({
-          name: "bard",
-          type: :upload,
-          urls: ["https://example.com/presigned-url"]
-        })
+    let(:backup_result) { Bard::Backup.new(timestamp: Time.now.utc, size: 42, destinations: []) }
 
-        expect(backup).to be_a(Bard::Backup)
-        expect(backup.destinations).to eq([])
-        expect(backup.timestamp).to be_a(Time)
-      end
+    before do
+      allow(Bard::Backup::Database).to receive(:create!).and_return(backup_result)
+      allow(Bard::Backup::FileTree).to receive(:create!)
     end
 
-    context "when called with keyword arguments" do
-      it "creates a backup" do
-        backup = described_class.create!(
-          name: "bard",
-          type: :upload,
-          urls: ["https://example.com/presigned-url"]
-        )
+    it "calls Database.create! and FileTree.create! with no args when none given" do
+      result = described_class.create!
 
-        expect(backup).to be_a(Bard::Backup)
-        expect(backup.destinations).to eq([])
-        expect(backup.timestamp).to be_a(Time)
-      end
+      expect(Bard::Backup::Database).to have_received(:create!).with(nil)
+      expect(Bard::Backup::FileTree).to have_received(:create!).with(no_args)
+      expect(result).to be(backup_result)
     end
 
-    context "when called with an array of hashes" do
-      it "creates a backup from multiple destinations" do
-        allow_any_instance_of(Bard::Backup::UploadDestination).to receive(:call).and_return(
-          Bard::Backup.new(timestamp: Time.now.utc, size: 100, destinations: [])
-        )
+    it "forwards all kwargs to Database and only AWS-cred kwargs to FileTree" do
+      described_class.create!(
+        type: :s3,
+        path: "bard-backup/test-project",
+        now: Time.parse("2024-07-25T12:00:03Z"),
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+        session_token: "token",
+        region: "us-west-2",
+      )
 
-        backup = described_class.create!([
-          {
-            name: "primary",
-            type: :upload,
-            urls: ["https://example.com/presigned-url-1"]
-          },
-          {
-            name: "secondary",
-            type: :upload,
-            urls: ["https://example.com/presigned-url-2"]
-          }
-        ])
+      expect(Bard::Backup::Database).to have_received(:create!).with(
+        nil,
+        type: :s3,
+        path: "bard-backup/test-project",
+        now: Time.parse("2024-07-25T12:00:03Z"),
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+        session_token: "token",
+        region: "us-west-2",
+      )
+      expect(Bard::Backup::FileTree).to have_received(:create!).with(
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+        session_token: "token",
+        region: "us-west-2",
+      )
+    end
 
-        expect(backup).to be_a(Bard::Backup)
-        expect(backup.destinations).to eq([])
-        expect(backup.timestamp).to be_a(Time)
-      end
+    it "forwards encryption_key to FileTree" do
+      described_class.create!(type: :s3, path: "p", encryption_key: "key")
+
+      expect(Bard::Backup::FileTree).to have_received(:create!).with(encryption_key: "key")
+    end
+
+    it "forwards an explicit destinations array plus kwargs separately" do
+      destinations = [{ name: "primary", type: :upload, urls: ["https://example.com/u"] }]
+      described_class.create!(
+        destinations,
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+        region: "us-west-2",
+      )
+
+      expect(Bard::Backup::Database).to have_received(:create!).with(
+        destinations,
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+        region: "us-west-2",
+      )
+      expect(Bard::Backup::FileTree).to have_received(:create!).with(
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+        region: "us-west-2",
+      )
     end
   end
 end

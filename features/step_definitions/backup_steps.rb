@@ -16,14 +16,14 @@ end
 When("I run the backup at {string}") do |timestamp|
   @fake_backhoe = FakeBackhoe.new
   stub_const("Backhoe", @fake_backhoe)
-  Bard::Backup.create!(type: :s3, path: @s3_tree.path, now: Time.parse(timestamp), **credentials)
+  Bard::Backup::Database.create!(type: :s3, path: @s3_tree.path, now: Time.parse(timestamp), **credentials)
 end
 
 When("I run the backup at {string} with encryption key {string}") do |timestamp, key|
   @fake_backhoe = FakeBackhoe.new
   stub_const("Backhoe", @fake_backhoe)
   @encryption_key = key
-  Bard::Backup.create!(type: :s3, path: @s3_tree.path, now: Time.parse(timestamp), encryption_key: key, **credentials)
+  Bard::Backup::Database.create!(type: :s3, path: @s3_tree.path, now: Time.parse(timestamp), encryption_key: key, **credentials)
 end
 
 Then("the bucket should contain the backups from {string}") do |fixture_path|

@@ -9,8 +9,7 @@ namespace :bard do
       Bard::Backup::RailsCredentials.find(name: dest[:name]).merge(dest)
     end
 
-    Bard::Backup.create!(destinations)
-    Bard::Backup::FileTree.create!(**Bard::Backup::RailsCredentials.find)
+    Bard::Backup.create!(destinations, **Bard::Backup::RailsCredentials.find)
   end
 
   namespace :backup do
