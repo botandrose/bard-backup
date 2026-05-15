@@ -4,13 +4,13 @@ require "active_support/core_ext/integer/time"
 
 module Bard
   class Backup
-    class Deleter < Struct.new(:s3_dir, :now)
+    class Deleter < Struct.new(:s3_tree, :now)
       def call
-        s3_dir.delete files_to_delete
+        s3_tree.delete_keys files_to_delete
       end
 
       def files_to_delete
-        s3_dir.files.select do |file|
+        s3_tree.list_objects.keys.select do |file|
           [
             Filter.new(now, 48, :hours),
             Filter.new(now, 30, :days),

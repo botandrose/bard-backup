@@ -2,13 +2,13 @@ require "backhoe"
 
 module Bard
   class Backup
-    class CachedLocalBackhoe < Struct.new(:s3_dir, :now)
+    class CachedLocalBackhoe < Struct.new(:s3_tree, :now)
       def self.call *args
         new(*args).call
       end
 
       def call
-        s3_dir.put path
+        s3_tree.put_file(path, File.basename(path))
       end
 
       private

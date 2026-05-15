@@ -59,8 +59,7 @@ encrypt true  # reads key from config/master.key
 ```
 
 **Key classes**:
-- `S3Dir` — older `aws-sdk-s3` wrapper used by `S3Destination`: `put`, `delete`, `files`, `empty!`, `mv`, `presigned_url`
-- `S3Tree` — newer `Data.define`-based S3 wrapper used by `FileTree`; supports encryption via `Encryptor`
+- `S3Tree` — `Data.define`-based S3 wrapper used by both `S3Destination` and `FileTree`. Methods: `list_objects`, `put_file`, `put_body`, `get`, `delete_keys`, `mv`, `empty!`. Supports encryption via `Encryptor` and STS `session_token`.
 - `FileTree` — syncs local data paths to S3 using a local `.bard-file-tree-sync.json` manifest (mtime+size fast path, MD5 verification, falls back to remote listing on first run)
 - `Encryptor` — AES-256-GCM with HKDF-derived keys and a deterministic IV (HMAC of plaintext), enabling content-addressable encryption
 - `Deleter` — implements the retention policy via `Filter` structs that check time-based granularities

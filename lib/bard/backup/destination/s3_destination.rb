@@ -1,4 +1,4 @@
-require "bard/backup/s3_dir"
+require "bard/backup/s3_tree"
 require "bard/backup/deleter"
 require "bard/backup/local_backhoe"
 require "bard/backup/cached_local_backhoe"
@@ -7,12 +7,12 @@ module Bard
   class Backup
     class S3Destination < Destination
       def call
-        strategy.call(s3_dir, now)
-        Deleter.new(s3_dir, now).call
+        strategy.call(s3_tree, now)
+        Deleter.new(s3_tree, now).call
       end
 
-      def s3_dir
-        @s3_dir ||= S3Dir.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :region, :encryption_key))
+      def s3_tree
+        @s3_tree ||= S3Tree.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :region, :encryption_key))
       end
 
       def info
