@@ -1,4 +1,5 @@
 require "aws-sdk-s3"
+require "fileutils"
 require "bard/backup/encryptor"
 
 module Bard
@@ -35,13 +36,21 @@ module Bard
       end
 
       def put_file(local_path, remote_key)
-        body = File.binread(local_path)
+        put_body(remote_key, File.binread(local_path))
+      end
+
+      def put_body(remote_key, body)
         body = encryptor.encrypt(body) if encryptor
         client.put_object({
           bucket: bucket_name,
           key: [folder_prefix, remote_key].compact.join("/"),
           body: body,
         })
+      end
+
+      def mv(local_path)
+        put_file(local_path, File.basename(local_path))
+        FileUtils.rm(local_path)
       end
 
       def get(remote_key)
