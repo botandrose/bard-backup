@@ -14,12 +14,6 @@ module Bard
         project_name ||= bard_config&.project_name
         return if data_paths.empty?
 
-        if s3_config.empty? && defined?(Rails)
-          credentials = Rails.application.credentials.bard_backup || []
-          credentials = [credentials] if credentials.is_a?(Hash)
-          s3_config = credentials.first&.slice(:access_key_id, :secret_access_key, :region) || {}
-        end
-
         encryption_key = s3_config.delete(:encryption_key)
         encryption_key ||= bard_config&.respond_to?(:encryption_key) ? bard_config.encryption_key : nil
 

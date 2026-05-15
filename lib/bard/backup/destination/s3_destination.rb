@@ -23,15 +23,7 @@ module Bard
 
       def config
         @config ||= begin
-          config = {}
-
-          if defined?(Rails)
-            credentials = Rails.application.credentials.bard_backup || []
-            credentials = [credentials] if credentials.is_a?(Hash)
-            config = credentials.find { |c| c[:name] == super[:name] } || {}
-          end
-
-          config = { type: :s3, region: "us-west-2" }.merge(config).merge(super)
+          config = { type: :s3, region: "us-west-2" }.merge(super)
           config[:endpoint] ||= "https://s3.#{config[:region]}.amazonaws.com"
           config
         end
