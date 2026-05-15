@@ -1,17 +1,58 @@
 # Bard::Backup
 
-Bard::Backup does 3 things in a bard project
-1. Takes a database dump and uploads it to our s3 bucket
-2. Deletes old backups using a backoff heuristic: 48 hours, 30 days, 26 weeks, 24 months, then yearly
-3. Raises an error if we don't have a backup from the previous hour
+Bard::Backup handles backups for a bard project:
+1. Takes a database dump and uploads it to S3 (or PUTs it to presigned URLs)
+2. Syncs configured data directories to S3 with a local manifest cache
+3. Deletes old database backups using a backoff heuristic: 48 hours, 30 days, 26 weeks, 24 months, then yearly
+4. Raises an error if we don't have a database backup from the previous hour
+5. Optionally encrypts uploaded payloads at rest with AES-256-GCM
 
 ## Installation
 
+Add to your `Gemfile`:
+
+```ruby
+gem "bard-backup"
+```
+
 ## Usage
 
-Run with `Bard::Backup.call path: "s3_bucket/optional_subfolder", access_key_id: "...", secret_access_key: "...", region: "..."`
+In a Rails app, configure destinations in `config/bard.rb` using the `Bard::Config` DSL:
 
-Or just run via the `bard-rake` gem: `rake db:backup`, which wires up the above for you.
+```ruby
+backup do
+  s3 "primary", path: "my-bucket/my-project", region: "us-west-2"
+end
+
+# Optional: encrypt payloads at rest. Reads the key from config/master.key.
+encrypt true
+```
+
+Credentials live in Rails encrypted credentials under `bard_backup` (matched by `name:`):
+
+```yaml
+bard_backup:
+  - name: primary
+    access_key_id: ...
+    secret_access_key: ...
+```
+
+Then run via the rake tasks provided by the bundled Railtie:
+
+```bash
+rake bard:backup        # database backup + data file-tree sync
+rake bard:backup:data   # data file-tree sync only
+```
+
+Or call programmatically:
+
+```ruby
+Bard::Backup.create!(type: :s3, path: "bucket/subfolder",
+                     access_key_id: "...", secret_access_key: "...", region: "...")
+Bard::Backup::FileTree.create!
+```
+
+`UploadDestination` (`type: :upload`, with `urls: [...]`) PUTs the dump to one or more presigned URLs in parallel — useful when the receiver, not the sender, holds the S3 credentials.
 
 ## Development
 
@@ -21,7 +62,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/bard-backup.
+Bug reports and pull requests are welcome on GitHub at https://github.com/botandrose/bard-backup.
 
 ## License
 
