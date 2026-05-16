@@ -9,6 +9,7 @@ module Bard
       def call
         strategy.call(s3_tree, now)
         Deleter.new(s3_tree, now).call
+        Bard::Backup.new(timestamp: now, destinations: [info])
       end
 
       def s3_tree
