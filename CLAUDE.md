@@ -50,12 +50,12 @@ Tests require AWS credentials at `spec/support/credentials.json`. In CI, this is
 - `S3Destination` — dumps DB locally via backhoe, uploads to S3, runs `Deleter` for retention, verifies previous hour's backup
 - `UploadDestination` — dumps DB and uploads to presigned URLs (multi-threaded)
 
-**Config DSL** (loaded via `bard/plugins/backup` and `bard/plugins/encrypt`, which extend `Bard::Config`):
+**Config DSL** (loaded via `bard/plugins/backup` and `bard/plugins/encrypt`; `backup` extends `Bard::Config`, `encrypt` extends `Bard::BackupConfig`):
 ```ruby
 backup do
   s3 "primary", path: "bucket/subfolder", region: "us-west-2"
+  encrypt true  # reads key from config/master.key
 end
-encrypt true  # reads key from config/master.key
 ```
 
 **Key classes**:

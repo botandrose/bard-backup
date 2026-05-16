@@ -22,10 +22,8 @@ In a Rails app, configure destinations in `config/bard.rb` using the `Bard::Conf
 ```ruby
 backup do
   s3 "primary", path: "my-bucket/my-project", region: "us-west-2"
+  encrypt true  # optional: encrypt payloads at rest. Reads key from config/master.key.
 end
-
-# Optional: encrypt payloads at rest. Reads the key from config/master.key.
-encrypt true
 ```
 
 Credentials live in Rails encrypted credentials under `bard_backup` (matched by `name:`):

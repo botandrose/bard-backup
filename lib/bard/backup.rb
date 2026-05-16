@@ -1,7 +1,9 @@
+require "bard"
+require "bard/plugins/backup"
+require "bard/plugins/encrypt"
 require "bard/backup/database"
 require "bard/backup/file_tree"
 require "bard/backup/latest_finder"
-require "bard"
 require "bard/backup/railtie" if defined?(Rails)
 
 module Bard
