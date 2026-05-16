@@ -21,4 +21,6 @@ jobs:
           }
           EOF
       - name: Run tests
+        env:
+          TEST_NAMESPACE: "gha-${{ github.run_id }}-${{ github.run_attempt }}"
         run: bundle exec rake

@@ -1,7 +1,7 @@
 require "bard/backup/encryptor"
 
 Given("the S3 bucket {string} contains the backups from {string}") do |path, fixture_path|
-  @s3_tree = Bard::Backup::S3Tree.new(path: path, **credentials)
+  @s3_tree = Bard::Backup::S3Tree.new(path: namespaced(path), **credentials)
   @s3_tree.empty!
   fixture_lines(fixture_path).each do |file_path|
     @s3_tree.put_body file_path, "TEST"
@@ -9,7 +9,7 @@ Given("the S3 bucket {string} contains the backups from {string}") do |path, fix
 end
 
 Given("the S3 bucket {string} is empty for backups") do |path|
-  @s3_tree = Bard::Backup::S3Tree.new(path: path, **credentials)
+  @s3_tree = Bard::Backup::S3Tree.new(path: namespaced(path), **credentials)
   @s3_tree.empty!
 end
 

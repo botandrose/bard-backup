@@ -3,6 +3,7 @@ require "aws-sdk-core"
 require "fileutils"
 
 Given("the S3 bucket {string} is empty") do |path|
+  path = namespaced(path)
   @s3_tree = Bard::Backup::S3Tree.new(path: path, **s3_credentials_for(path))
   @s3_tree.empty!
 end
@@ -19,7 +20,7 @@ When("I sync file trees for data paths {string}") do |paths_string|
   data_paths = paths_string.split(",")
   Bard::Backup::FileTree.create!(
     data_paths: data_paths,
-    project_name: "test-file-tree",
+    project_name: namespaced_project("test-file-tree"),
     bucket: "bard-backup-test",
     **credentials,
   )
@@ -29,7 +30,7 @@ When("I sync file trees for data paths {string} with encryption key {string}") d
   data_paths = paths_string.split(",")
   Bard::Backup::FileTree.create!(
     data_paths: data_paths,
-    project_name: "test-file-tree-enc",
+    project_name: namespaced_project("test-file-tree-enc"),
     bucket: "bard-backup-test",
     encryption_key: key,
     **credentials,
@@ -64,6 +65,7 @@ When("I delete the local file {string}") do |path|
 end
 
 Then("the S3 bucket {string} should contain encrypted:") do |path, table|
+  path = namespaced(path)
   raw_s3_tree = Bard::Backup::S3Tree.new(path: path, **s3_credentials_for(path))
   objects = raw_s3_tree.list_objects
 
@@ -77,6 +79,7 @@ Then("the S3 bucket {string} should contain encrypted:") do |path, table|
 end
 
 Then("the S3 bucket {string} should contain:") do |path, table|
+  path = namespaced(path)
   s3_tree = Bard::Backup::S3Tree.new(path: path, **s3_credentials_for(path))
   objects = s3_tree.list_objects
 
