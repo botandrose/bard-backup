@@ -13,7 +13,7 @@ module Bard
       end
 
       def s3_tree
-        @s3_tree ||= S3Tree.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :region, :encryption_key))
+        @s3_tree ||= S3Tree.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region, :encryption_key))
       end
 
       def info
