@@ -2,6 +2,7 @@ require "bard/backup/s3_tree"
 require "bard/backup/deleter"
 require "bard/backup/local_backhoe"
 require "bard/backup/cached_local_backhoe"
+require "bard/backup/rails_credentials"
 
 module Bard
   class Backup
@@ -24,7 +25,9 @@ module Bard
 
       def config
         @config ||= begin
-          config = { type: :s3, region: "us-west-2" }.merge(super)
+          explicit = super
+          credentials = RailsCredentials.find(name: explicit[:name])
+          config = { type: :s3, region: "us-west-2" }.merge(credentials).merge(explicit)
           config[:endpoint] ||= "https://s3.#{config[:region]}.amazonaws.com"
           config
         end
