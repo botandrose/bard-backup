@@ -42,6 +42,39 @@ rake bard:backup        # database backup + data file-tree sync
 rake bard:backup:data   # data file-tree sync only
 ```
 
+## Restoring
+
+Restore a database backup from S3 into the local database. The backup nearest the
+requested timestamp is selected (backups run hourly, so an exact match isn't
+guaranteed), downloaded, decrypted if necessary, and loaded via `backhoe`,
+dropping and recreating the local database.
+
+From the `bard` CLI:
+
+```bash
+bard backup restore                       # list the available backup timestamps
+bard backup restore 2026-06-05T16:00:00Z  # restore the backup nearest this UTC time
+```
+
+Or via the rake task directly:
+
+```bash
+rake "bard:backup:restore"                       # list available backups
+rake "bard:backup:restore[2026-06-05T16:00:00Z]" # restore nearest this time
+```
+
+Or programmatically:
+
+```ruby
+Bard::Backup.available                            # => [Time, Time, ...]
+Bard::Backup.restore!                             # restore the latest backup
+Bard::Backup.restore!(at: "2026-06-05T16:00:00Z") # restore nearest this time
+```
+
+Timestamps are UTC (the `Z`-suffixed ISO-8601 form the backups are named with).
+Restore requires self-managed destinations configured via the `backup do ... end`
+DSL; bard-managed backups are not yet supported.
+
 Or call programmatically:
 
 ```ruby

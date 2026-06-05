@@ -45,6 +45,7 @@ Tests require AWS credentials at `spec/support/credentials.json`. In CI, this is
 **Entry points**:
 - `Bard::Backup.create!` accepts destination configs (or reads from `Bard::Config`) and delegates to destination strategies. Returns a `Bard::Backup` instance with timestamp/size/destinations.
 - `Bard::Backup::FileTree.create!` syncs configured data directories to S3.
+- `Bard::Backup.restore!(at:)` downloads the backup nearest `at` (or the latest when omitted), decrypts it if necessary, and loads it into the local database via `backhoe` (drop-and-create). `Bard::Backup.available` lists the available backup timestamps.
 
 **Destination strategy pattern**: `Destination.build(config)` is a factory that picks the right class based on `:type`:
 - `S3Destination` — dumps DB locally via backhoe, uploads to S3, runs `Deleter` for retention, verifies previous hour's backup
@@ -65,5 +66,7 @@ end
 - `Deleter` — implements the retention policy via `Filter` structs that check time-based granularities
 - `LocalBackhoe` / `CachedLocalBackhoe` — database dump strategies (cached variant avoids conflicts when running parallel destinations)
 - `LatestFinder` — finds the most recent backup across all configured destinations
+- `Finder` — lists backups across destinations and selects one by timestamp (nearest match, or latest); backs `Bard::Backup.restore!`/`.available`
 - `BackupConfig` — the `backup do ... end` DSL surface (`bard`, `disabled`, `s3 name, **kwargs`); `create!` reads `bard_config.backup.destinations` from it
-- `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data) and `bard:backup:data` (data only) rake tasks in Rails apps
+- `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data), `bard:backup:data` (data only), and `bard:backup:restore[at]` (restore/list) rake tasks in Rails apps
+- `bard/plugins/backup_restore.rb` — registers the `bard backup restore [TIMESTAMP]` CLI subcommand (loaded by the `bard` CLI via `Gem.find_files`); shells out to the `bard:backup:restore` rake task
