@@ -25,11 +25,7 @@ module Bard
       private
 
       def encryption_key
-        config[:encryption_key] || configured_encryption_key
-      end
-
-      def configured_encryption_key
-        Bard::Config.current.backup.encryption_key
+        config[:encryption_key] || Bard::Config.current.backup.encryption_key
       end
 
       def now

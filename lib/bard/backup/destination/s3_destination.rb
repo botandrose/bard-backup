@@ -30,7 +30,7 @@ module Bard
           credentials = RailsCredentials.find(name: config[:name])
           resolved = { type: :s3, region: "us-west-2" }.merge(credentials).merge(config)
           resolved[:endpoint] ||= "https://s3.#{resolved[:region]}.amazonaws.com"
-          resolved[:encryption_key] ||= configured_encryption_key
+          resolved[:encryption_key] ||= Bard::Config.current.backup.encryption_key
           resolved
         end
       end
