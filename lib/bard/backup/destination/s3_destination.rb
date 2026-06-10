@@ -14,31 +14,30 @@ module Bard
       end
 
       def s3_tree
-        @s3_tree ||= S3Tree.new(**config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region, :encryption_key))
+        @s3_tree ||= S3Tree.new(**resolved_config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region, :encryption_key).compact)
       end
 
       def info
-        config.slice(:name, :type, :path, :region)
+        resolved_config.slice(:name, :type, :path, :region)
       end
 
       private
 
-      def config
-        @config ||= begin
-          explicit = super
-          credentials = RailsCredentials.find(name: explicit[:name])
-          config = { type: :s3, region: "us-west-2" }.merge(credentials).merge(explicit)
-          config[:endpoint] ||= "https://s3.#{config[:region]}.amazonaws.com"
-          if (key = config[:encryption_key] || configured_encryption_key)
-            config[:encryption_key] = key
-          end
-          config
+      # The raw config enriched with Rails credentials (by name), defaults, the
+      # computed endpoint, and the resolved encryption key.
+      def resolved_config
+        @resolved_config ||= begin
+          credentials = RailsCredentials.find(name: config[:name])
+          resolved = { type: :s3, region: "us-west-2" }.merge(credentials).merge(config)
+          resolved[:endpoint] ||= "https://s3.#{resolved[:region]}.amazonaws.com"
+          resolved[:encryption_key] ||= configured_encryption_key
+          resolved
         end
       end
 
       def strategy
         return @strategy if @strategy
-        @strategy = config.fetch(:strategy, LocalBackhoe)
+        @strategy = resolved_config.fetch(:strategy, LocalBackhoe)
         @strategy = Bard::Backup.const_get(@strategy) if @strategy.is_a?(String)
         @strategy
       end

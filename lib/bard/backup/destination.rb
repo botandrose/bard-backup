@@ -23,8 +23,6 @@ module Bard
 
       private
 
-      # The explicit encryption key, falling back to the one configured via
-      # `encrypt true` in the backup DSL.
       def encryption_key
         config[:encryption_key] || configured_encryption_key
       end
