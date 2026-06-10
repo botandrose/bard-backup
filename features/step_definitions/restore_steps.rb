@@ -31,12 +31,6 @@ When("I restore the backup nearest {string}") do |at|
   Bard::Backup.restore!(at: at, destinations: restore_destinations)
 end
 
-When("I restore the backup without specifying a timestamp") do
-  @fake_backhoe = FakeBackhoe.new
-  stub_const("Backhoe", @fake_backhoe)
-  Bard::Backup.restore!(destinations: restore_destinations)
-end
-
 When("I restore the encrypted backup nearest {string} with key {string}") do |at, key|
   @fake_backhoe = FakeBackhoe.new
   stub_const("Backhoe", @fake_backhoe)

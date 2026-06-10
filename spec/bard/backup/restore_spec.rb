@@ -35,14 +35,14 @@ RSpec.describe Bard::Backup::Restore do
       expect(File.binread(path)).to eq("DUMP-BODY")
     end
 
-    described_class.call(destinations: [{ type: :s3, path: "b/p" }])
+    described_class.call(at: "2024-07-25T12:00:00Z", destinations: [{ type: :s3, path: "b/p" }])
 
     expect(loaded_path).to eq("/tmp/bard-backup-restore-2024-07-25T12:00:00Z.sql.gz")
     expect(File).not_to exist(loaded_path)
   end
 
   it "passes drop_and_create: false through to backhoe" do
-    described_class.call(drop_and_create: false, destinations: [{ type: :s3, path: "b/p" }])
+    described_class.call(at: "2024-07-25T12:00:00Z", drop_and_create: false, destinations: [{ type: :s3, path: "b/p" }])
 
     expect(backhoe).to have_received(:load).with(anything, drop_and_create: false)
   end

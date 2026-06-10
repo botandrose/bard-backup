@@ -25,7 +25,7 @@ module Bard
       Finder.new(destinations).timestamps
     end
 
-    def self.restore!(at: nil, drop_and_create: true, destinations: nil)
+    def self.restore!(at:, drop_and_create: true, destinations: nil)
       Restore.call(at: at, drop_and_create: drop_and_create, destinations: destinations)
     end
 
