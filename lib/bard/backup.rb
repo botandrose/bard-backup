@@ -3,7 +3,6 @@ require "bard/plugins/backup"
 require "bard/plugins/encrypt"
 require "bard/backup/database"
 require "bard/backup/file_tree"
-require "bard/backup/latest_finder"
 require "bard/backup/finder"
 require "bard/backup/railtie" if defined?(Rails)
 
@@ -18,7 +17,7 @@ module Bard
     end
 
     def self.latest
-      LatestFinder.new.call
+      Finder.new.latest
     end
 
     # Sorted list of available backup timestamps across the destinations.

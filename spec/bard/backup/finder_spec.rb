@@ -48,6 +48,38 @@ RSpec.describe Bard::Backup::Finder do
     end
   end
 
+  describe "#latest" do
+    let(:s3_tree) do
+      double("S3Tree",
+        list_objects: filenames.to_h { |name| [name, "etag"] },
+        folder_prefix: "project",
+        bucket_name: "bucket",
+      )
+    end
+    let(:destination) { double("Destination", s3_tree: s3_tree, info: { name: "primary", type: :s3, path: "bucket/project" }) }
+    let(:client) { double("Client") }
+
+    before do
+      allow(s3_tree).to receive(:client).and_return(client)
+      allow(client).to receive(:head_object).and_return(double(content_length: 1234))
+    end
+
+    it "returns a Bard::Backup for the most recent backup with size and destination info" do
+      backup = finder.latest
+
+      expect(backup).to be_a(Bard::Backup)
+      expect(backup.timestamp).to eq(Time.parse("2024-07-25T13:00:00Z"))
+      expect(backup.size).to eq(1234)
+      expect(backup.destinations).to eq([{ name: "primary", type: :s3, path: "bucket/project" }])
+      expect(client).to have_received(:head_object).with(bucket: "bucket", key: "project/2024-07-25T13:00:00Z.sql.gz")
+    end
+
+    it "raises NotFound when there are no backups" do
+      allow(s3_tree).to receive(:list_objects).and_return({})
+      expect { finder.latest }.to raise_error(Bard::Backup::NotFound)
+    end
+  end
+
   describe ".resolve_destinations" do
     it "wraps a single hash in an array" do
       expect(described_class.resolve_destinations({ type: :s3 })).to eq([{ type: :s3 }])

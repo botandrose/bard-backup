@@ -65,8 +65,7 @@ end
 - `Encryptor` — AES-256-GCM with HKDF-derived keys and a deterministic IV (HMAC of plaintext), enabling content-addressable encryption
 - `Deleter` — implements the retention policy via `Filter` structs that check time-based granularities
 - `LocalBackhoe` / `CachedLocalBackhoe` — database dump strategies (cached variant avoids conflicts when running parallel destinations)
-- `LatestFinder` — finds the most recent backup across all configured destinations
-- `Finder` — lists backups across destinations and selects one by timestamp (nearest match, or latest); backs `Bard::Backup.restore!`/`.available`
+- `Finder` — lists backups across destinations and selects one: by timestamp (nearest match), the latest, or the most-recent as a `Bard::Backup` (with size + destination info). Backs `Bard::Backup.restore!`/`.available`/`.latest`
 - `BackupConfig` — the `backup do ... end` DSL surface (`bard`, `disabled`, `s3 name, **kwargs`); `create!` reads `bard_config.backup.destinations` from it
 - `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data), `bard:backup:data` (data only), and `bard:backup:restore[at]` (restore/list) rake tasks in Rails apps
 - `bard/plugins/backup_restore.rb` — registers the `bard backup restore [TIMESTAMP]` CLI subcommand (loaded by the `bard` CLI via `Gem.find_files`); shells out to the `bard:backup:restore` rake task

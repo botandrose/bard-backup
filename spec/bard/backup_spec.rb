@@ -1,6 +1,16 @@
 require "spec_helper"
 
 RSpec.describe Bard::Backup do
+  describe ".latest" do
+    it "delegates to the finder" do
+      sentinel = Bard::Backup.new(timestamp: Time.now.utc)
+      finder = instance_double(Bard::Backup::Finder, latest: sentinel)
+      allow(Bard::Backup::Finder).to receive(:new).and_return(finder)
+
+      expect(described_class.latest).to be(sentinel)
+    end
+  end
+
   describe ".create!" do
     let(:backup_result) { Bard::Backup.new(timestamp: Time.now.utc, size: 42, destinations: []) }
 

@@ -46,6 +46,22 @@ module Bard
         end
       end
 
+      # Returns a Bard::Backup describing the most recent backup, including its
+      # size and the info of every destination that holds that timestamp.
+      def latest
+        backups = all
+        raise NotFound, "No backups found" if backups.empty?
+
+        newest = backups.max_by { |backup| backup[:timestamp] }
+        Bard::Backup.new(
+          timestamp: newest[:timestamp],
+          size: file_size(newest[:destination].s3_tree, newest[:filename]),
+          destinations: backups
+            .select { |backup| backup[:timestamp] == newest[:timestamp] }
+            .map { |backup| backup[:destination].info },
+        )
+      end
+
       # Resolves destination config the same way Database.create! does, so
       # encrypted backups decrypt transparently on read.
       def self.resolve_destinations(destinations)
@@ -61,6 +77,11 @@ module Bard
       end
 
       private
+
+      def file_size(s3_tree, filename)
+        key = [s3_tree.folder_prefix, filename].compact.join("/")
+        s3_tree.send(:client).head_object(bucket: s3_tree.bucket_name, key: key).content_length
+      end
 
       def parse_timestamp(filename)
         filename =~ /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/ ? Time.parse($1) : nil
