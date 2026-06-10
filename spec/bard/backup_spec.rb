@@ -11,6 +11,31 @@ RSpec.describe Bard::Backup do
     end
   end
 
+  describe ".restore!" do
+    it "delegates to Restore.call with the given options" do
+      sentinel = Bard::Backup.new(timestamp: Time.now.utc)
+      allow(Bard::Backup::Restore).to receive(:call).and_return(sentinel)
+
+      result = described_class.restore!(at: "2024-07-25T12:00:00Z", destinations: [{ type: :s3 }])
+
+      expect(Bard::Backup::Restore).to have_received(:call).with(
+        at: "2024-07-25T12:00:00Z",
+        drop_and_create: true,
+        destinations: [{ type: :s3 }],
+      )
+      expect(result).to be(sentinel)
+    end
+  end
+
+  describe ".available" do
+    it "delegates to the finder's sorted timestamps" do
+      finder = instance_double(Bard::Backup::Finder, timestamps: [Time.parse("2024-07-25T12:00:00Z")])
+      allow(Bard::Backup::Finder).to receive(:new).with([{ type: :s3 }]).and_return(finder)
+
+      expect(described_class.available(destinations: [{ type: :s3 }])).to eq([Time.parse("2024-07-25T12:00:00Z")])
+    end
+  end
+
   describe ".create!" do
     let(:backup_result) { Bard::Backup.new(timestamp: Time.now.utc, size: 42, destinations: []) }
 

@@ -4,6 +4,7 @@ require "bard/plugins/encrypt"
 require "bard/backup/database"
 require "bard/backup/file_tree"
 require "bard/backup/finder"
+require "bard/backup/restore"
 require "bard/backup/railtie" if defined?(Rails)
 
 module Bard
@@ -20,26 +21,12 @@ module Bard
       Finder.new.latest
     end
 
-    # Sorted list of available backup timestamps across the destinations.
     def self.available(destinations: nil)
       Finder.new(destinations).timestamps
     end
 
-    # Downloads the backup nearest to +at+ (or the latest when +at+ is nil),
-    # decrypts it if necessary, and loads it into the local database via backhoe.
     def self.restore!(at: nil, drop_and_create: true, destinations: nil)
-      require "backhoe"
-      require "fileutils"
-
-      backup = Finder.new(destinations).find(at: at)
-      body = backup[:destination].s3_tree.get(backup[:filename])
-      path = "/tmp/bard-backup-restore-#{File.basename(backup[:filename])}"
-      File.binwrite(path, body)
-      Backhoe.load(path, drop_and_create: drop_and_create)
-
-      new(timestamp: backup[:timestamp], size: body.bytesize, destinations: [backup[:destination].info])
-    ensure
-      FileUtils.rm_f(path) if path
+      Restore.call(at: at, drop_and_create: drop_and_create, destinations: destinations)
     end
 
     attr_reader :timestamp, :size, :destinations
