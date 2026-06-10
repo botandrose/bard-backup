@@ -1,3 +1,5 @@
+require "bard/config"
+
 module Bard
   class Backup
     class Destination < Struct.new(:config)
@@ -11,8 +13,7 @@ module Bard
       # an Array. Each destination resolves its own encryption key (see
       # #encryption_key), so callers don't have to inject it.
       def self.resolve(destination_hashes = nil)
-        bard_config = defined?(Bard::Config) ? Bard::Config.current : nil
-        hashes = destination_hashes || bard_config&.backup&.destinations || []
+        hashes = destination_hashes || Bard::Config.current.backup.destinations
         hashes = hashes.is_a?(Hash) ? [hashes] : Array(hashes)
         hashes.map { |hash| build(hash) }
       end
@@ -28,7 +29,6 @@ module Bard
       end
 
       def configured_encryption_key
-        return nil unless defined?(Bard::Config)
         Bard::Config.current.backup.encryption_key
       end
 
