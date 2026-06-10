@@ -55,8 +55,8 @@ module Bard
 
         File.open(file_path, "rb") do |file|
           body = file.read
-          if config[:encryption_key]
-            body = Encryptor.new(config[:encryption_key]).encrypt(body)
+          if (key = encryption_key)
+            body = Encryptor.new(key).encrypt(body)
           end
           request = Net::HTTP::Put.new(uri)
           request.body = body

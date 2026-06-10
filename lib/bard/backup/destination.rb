@@ -7,18 +7,13 @@ module Bard
       end
 
       # Normalizes destination config into built destinations: falls back to the
-      # configured destinations when none are given, accepts a lone Hash or an
-      # Array, and injects the configured encryption key so encrypted payloads
-      # are read and written transparently.
+      # configured destinations when none are given, and accepts a lone Hash or
+      # an Array. Each destination resolves its own encryption key (see
+      # #encryption_key), so callers don't have to inject it.
       def self.resolve(destination_hashes = nil)
         bard_config = defined?(Bard::Config) ? Bard::Config.current : nil
         hashes = destination_hashes || bard_config&.backup&.destinations || []
         hashes = hashes.is_a?(Hash) ? [hashes] : Array(hashes)
-
-        if (encryption_key = bard_config&.backup&.encryption_key)
-          hashes = hashes.map { |hash| { encryption_key: encryption_key, **hash } }
-        end
-
         hashes.map { |hash| build(hash) }
       end
 
@@ -27,6 +22,17 @@ module Bard
       end
 
       private
+
+      # The explicit encryption key, falling back to the one configured via
+      # `encrypt true` in the backup DSL.
+      def encryption_key
+        config[:encryption_key] || configured_encryption_key
+      end
+
+      def configured_encryption_key
+        return nil unless defined?(Bard::Config)
+        Bard::Config.current.backup.encryption_key
+      end
 
       def now
         @now ||= config.fetch(:now, Time.now.utc)

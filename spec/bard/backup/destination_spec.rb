@@ -43,15 +43,5 @@ RSpec.describe Bard::Backup::Destination do
 
       expect(destinations.map(&:class)).to eq([Bard::Backup::UploadDestination])
     end
-
-    it "injects the configured encryption key into each hash before building" do
-      backup_config = double(destinations: [{ type: :s3, name: "a", path: "bucket/a" }], encryption_key: "secret-key")
-      allow(Bard::Config).to receive(:current).and_return(double(backup: backup_config))
-      allow(described_class).to receive(:build).and_call_original
-
-      described_class.resolve
-
-      expect(described_class).to have_received(:build).with(hash_including(encryption_key: "secret-key"))
-    end
   end
 end

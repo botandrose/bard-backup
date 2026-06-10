@@ -47,7 +47,7 @@ Tests require AWS credentials at `spec/support/credentials.json`. In CI, this is
 - `Bard::Backup::FileTree.create!` syncs configured data directories to S3.
 - `Bard::Backup.restore!(at:)` downloads the backup nearest `at` (or the latest when omitted), decrypts it if necessary, and loads it into the local database via `backhoe` (drop-and-create). `Bard::Backup.available` lists the available backup timestamps.
 
-**Destination strategy pattern**: `Destination.build(config)` is a factory that picks the right class based on `:type`:
+**Destination strategy pattern**: `Destination.build(config)` is a factory that picks the right class based on `:type`. `Destination.resolve(hashes)` is the single entry point both `Database.create!` and `Finder` use — it falls back to the configured destinations, normalizes a lone Hash/Array, and builds them. Each destination resolves its own `encryption_key` (explicit config, falling back to `Bard::Config.current.backup.encryption_key`), so callers never inject it.
 - `S3Destination` — dumps DB locally via backhoe, uploads to S3, runs `Deleter` for retention, verifies previous hour's backup
 - `UploadDestination` — dumps DB and uploads to presigned URLs (multi-threaded)
 
