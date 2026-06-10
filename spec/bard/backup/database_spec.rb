@@ -60,5 +60,31 @@ RSpec.describe Bard::Backup::Database do
         expect(backup.timestamp).to be_a(Time)
       end
     end
+
+    context "with multiple destinations" do
+      it "aggregates every destination's info into one backup" do
+        now = Time.parse("2024-07-25T12:00:00Z")
+        primary = double(call: Bard::Backup.new(timestamp: now, size: 10, destinations: [{ name: "primary" }]))
+        secondary = double(call: Bard::Backup.new(timestamp: now, destinations: [{ name: "secondary" }]))
+        allow(Bard::Backup::Destination).to receive(:resolve).and_return([primary, secondary])
+
+        backup = described_class.create!([{ name: "primary" }, { name: "secondary" }])
+
+        expect(backup.destinations).to eq([{ name: "primary" }, { name: "secondary" }])
+        expect(backup.timestamp).to eq(now)
+        expect(backup.size).to eq(10)
+      end
+
+      it "resolves all destinations with a single run timestamp" do
+        allow(Bard::Backup::Destination).to receive(:resolve).and_return([])
+
+        described_class.create!([{ type: :upload, urls: ["https://example.com"] }])
+
+        expect(Bard::Backup::Destination).to have_received(:resolve).with(
+          [{ type: :upload, urls: ["https://example.com"] }],
+          now: an_instance_of(Time),
+        )
+      end
+    end
   end
 end

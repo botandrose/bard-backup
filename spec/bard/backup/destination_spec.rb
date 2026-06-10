@@ -21,7 +21,7 @@ RSpec.describe Bard::Backup::Destination do
 
   describe ".resolve" do
     it "builds a destination from a single hash" do
-      destinations = described_class.resolve(type: :s3, name: "aws", path: "bucket/path")
+      destinations = described_class.resolve({ type: :s3, name: "aws", path: "bucket/path" })
 
       expect(destinations.map(&:class)).to eq([Bard::Backup::S3Destination])
     end
@@ -42,6 +42,27 @@ RSpec.describe Bard::Backup::Destination do
       destinations = described_class.resolve
 
       expect(destinations.map(&:class)).to eq([Bard::Backup::UploadDestination])
+    end
+
+    it "stamps every destination with the given run timestamp" do
+      now = Time.parse("2024-07-25T12:00:00Z")
+      allow(described_class).to receive(:build).and_call_original
+
+      described_class.resolve([
+        { type: :upload, urls: ["https://example.com/a"] },
+        { type: :upload, urls: ["https://example.com/b"] },
+      ], now: now)
+
+      expect(described_class).to have_received(:build).with(hash_including(now: now)).twice
+    end
+
+    it "lets a destination's own timestamp override the run timestamp" do
+      allow(described_class).to receive(:build).and_call_original
+      explicit = Time.parse("2024-07-25T13:00:00Z")
+
+      described_class.resolve([{ type: :upload, urls: ["https://example.com"], now: explicit }], now: Time.parse("2024-07-25T12:00:00Z"))
+
+      expect(described_class).to have_received(:build).with(hash_including(now: explicit))
     end
   end
 end

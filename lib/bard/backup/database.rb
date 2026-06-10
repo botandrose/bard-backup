@@ -8,11 +8,15 @@ module Bard
           destination_hashes = [config]
         end
 
-        result = nil
-        Destination.resolve(destination_hashes).each do |destination|
-          result = destination.call
-        end
-        result
+        now = Time.now.utc
+        backups = Destination.resolve(destination_hashes, now: now).map(&:call)
+        return nil if backups.empty?
+
+        Bard::Backup.new(
+          timestamp: backups.first.timestamp,
+          size: backups.first.size,
+          destinations: backups.flat_map(&:destinations),
+        )
       end
     end
   end
