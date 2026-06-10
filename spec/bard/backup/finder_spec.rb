@@ -80,9 +80,4 @@ RSpec.describe Bard::Backup::Finder do
     end
   end
 
-  describe ".resolve_destinations" do
-    it "wraps a single hash in an array" do
-      expect(described_class.resolve_destinations({ type: :s3 })).to eq([{ type: :s3 }])
-    end
-  end
 end

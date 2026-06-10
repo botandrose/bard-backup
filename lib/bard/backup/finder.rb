@@ -11,13 +11,12 @@ module Bard
     # listing (enumerate available timestamps).
     class Finder
       def initialize(destinations = nil)
-        @destination_hashes = self.class.resolve_destinations(destinations)
+        @destinations = Destination.resolve(destinations)
       end
 
       # Returns every backup as { timestamp:, destination:, filename: }.
       def all
-        @destination_hashes.flat_map do |hash|
-          destination = Destination.build(hash)
+        @destinations.flat_map do |destination|
           destination.s3_tree.list_objects.keys.filter_map do |filename|
             timestamp = parse_timestamp(filename)
             next unless timestamp
@@ -60,20 +59,6 @@ module Bard
             .select { |backup| backup[:timestamp] == newest[:timestamp] }
             .map { |backup| backup[:destination].info },
         )
-      end
-
-      # Resolves destination config the same way Database.create! does, so
-      # encrypted backups decrypt transparently on read.
-      def self.resolve_destinations(destinations)
-        bard_config = defined?(Bard::Config) ? Bard::Config.current : nil
-        hashes = destinations || bard_config&.backup&.destinations || []
-        hashes = hashes.is_a?(Hash) ? [hashes] : Array(hashes)
-
-        encryption_key = bard_config&.backup&.encryption_key
-        if encryption_key
-          hashes = hashes.map { |hash| { encryption_key: encryption_key, **hash } }
-        end
-        hashes
       end
 
       private
