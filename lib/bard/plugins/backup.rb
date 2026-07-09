@@ -56,6 +56,15 @@ class Bard::Config
     end
   end
 
+  # data paths are shared config: bard-backup archives them, bard's `data` command syncs them.
+  def data(*paths)
+    if paths.empty?
+      @data_paths ||= []
+    else
+      @data_paths = paths
+    end
+  end
+
   def backup_enabled?
     backup == true
   end
