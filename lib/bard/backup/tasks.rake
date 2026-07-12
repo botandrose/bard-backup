@@ -19,6 +19,16 @@ namespace :bard do
       Bard::Backup::FileTree.create!(**Bard::Backup::RailsCredentials.find)
     end
 
+    desc "Re-encrypt all S3 backups from the prior master key (ENV BARD_ROTATE_OLD_KEY) to the current one"
+    task :reencrypt => :environment do
+      require "bard/backup"
+      # Keys travel via ENV, never argv, so the master key never lands in shell/process history.
+      old_key = ENV.fetch("BARD_ROTATE_OLD_KEY").strip
+      new_key = (ENV["BARD_ROTATE_NEW_KEY"] || File.read("config/master.key")).strip
+      keys = Bard::Backup.reencrypt!(old_key: old_key, new_key: new_key)
+      puts "Re-encrypted #{keys.length} backup object(s) across all S3 destinations."
+    end
+
     desc "Restore the database backup nearest a timestamp (no timestamp lists available backups)"
     task :restore, [:at] => :environment do |_task, args|
       require "bard/backup"

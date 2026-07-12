@@ -14,7 +14,13 @@ module Bard
       end
 
       def s3_tree
-        @s3_tree ||= S3Tree.new(**resolved_config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region, :encryption_key).compact)
+        @s3_tree ||= S3Tree.new(**s3_tree_config, **encryption_kwarg)
+      end
+
+      # The S3 connection config alone (no encryption key), so a re-key can build one tree
+      # per key against the same bucket. See Bard::Backup::Reencryptor.
+      def s3_tree_config
+        resolved_config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region).compact
       end
 
       def info
@@ -33,6 +39,11 @@ module Bard
           resolved[:encryption_key] ||= Bard::Config.current.backup.encryption_key
           resolved
         end
+      end
+
+      def encryption_kwarg
+        key = resolved_config[:encryption_key]
+        key ? { encryption_key: key } : {}
       end
 
       def strategy
