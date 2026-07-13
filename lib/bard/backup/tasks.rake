@@ -29,7 +29,7 @@ namespace :bard do
         backups = Bard::Backup.available(destinations: destinations)
         puts "Available backups:"
         backups.each do |backup|
-          puts "  #{backup.timestamp.iso8601}  #{ActiveSupport::NumberHelper.number_to_human_size(backup.size)}"
+          puts "  #{backup.timestamp.iso8601}  #{backup.human_size}"
         end
       else
         backup = Bard::Backup.restore!(at: args[:at], destinations: destinations)
