@@ -22,7 +22,7 @@ module Bard
     end
 
     def self.available(destinations: nil)
-      Finder.new(destinations).timestamps
+      Finder.new(destinations).available
     end
 
     def self.restore!(at:, drop_and_create: true, destinations: nil)
@@ -43,6 +43,16 @@ module Bard
         size: size,
         destinations: destinations
       }.compact
+    end
+
+    def human_size
+      units = %w[Bytes KB MB GB TB PB EB]
+      value, unit = size.to_f, 0
+      while value >= 1024 && unit < units.size - 1
+        value /= 1024
+        unit += 1
+      end
+      format("%5.2f %s", value, units[unit])
     end
   end
 end

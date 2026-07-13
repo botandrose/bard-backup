@@ -27,12 +27,26 @@ RSpec.describe Bard::Backup do
     end
   end
 
+  describe "#human_size" do
+    def human_size(bytes)
+      described_class.new(timestamp: Time.parse("2024-07-25T12:00:00Z"), size: bytes).human_size
+    end
+
+    it "formats the size as a right-aligned 2-decimal value with a unit" do
+      expect(human_size(1_556_925_645)).to eq(" 1.45 GB")
+      expect(human_size(20_685)).to eq("20.20 KB")
+      expect(human_size(512)).to eq("512.00 Bytes")
+      expect(human_size(0)).to eq(" 0.00 Bytes")
+    end
+  end
+
   describe ".available" do
-    it "delegates to the finder's sorted timestamps" do
-      finder = instance_double(Bard::Backup::Finder, timestamps: [Time.parse("2024-07-25T12:00:00Z")])
+    it "delegates to the finder's sorted backups" do
+      backups = [Bard::Backup.new(timestamp: Time.parse("2024-07-25T12:00:00Z"), size: 200)]
+      finder = instance_double(Bard::Backup::Finder, available: backups)
       allow(Bard::Backup::Finder).to receive(:new).with([{ type: :s3 }]).and_return(finder)
 
-      expect(described_class.available(destinations: [{ type: :s3 }])).to eq([Time.parse("2024-07-25T12:00:00Z")])
+      expect(described_class.available(destinations: [{ type: :s3 }])).to eq(backups)
     end
   end
 
