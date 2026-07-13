@@ -1,14 +1,14 @@
 Feature: Restoring databases from S3
-  Scenario: Listing the available backups
+  Scenario: Listing the available backups with their sizes
     Given the S3 bucket "bard-backup-test/test-restore" contains these database backups:
-      | 2024-07-25T11:00:00Z.sql.gz |
-      | 2024-07-25T12:00:00Z.sql.gz |
-      | 2024-07-25T13:00:00Z.sql.gz |
+      | 2024-07-25T11:00:00Z.sql.gz | 100 |
+      | 2024-07-25T12:00:00Z.sql.gz | 200 |
+      | 2024-07-25T13:00:00Z.sql.gz | 300 |
     When I list the available backups
     Then the available backups should be:
-      | 2024-07-25T11:00:00Z |
-      | 2024-07-25T12:00:00Z |
-      | 2024-07-25T13:00:00Z |
+      | 2024-07-25T11:00:00Z | 100 |
+      | 2024-07-25T12:00:00Z | 200 |
+      | 2024-07-25T13:00:00Z | 300 |
 
   Scenario: Restoring the backup nearest a timestamp
     Given the S3 bucket "bard-backup-test/test-restore" contains these database backups:

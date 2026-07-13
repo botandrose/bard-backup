@@ -28,11 +28,12 @@ RSpec.describe Bard::Backup do
   end
 
   describe ".available" do
-    it "delegates to the finder's sorted timestamps" do
-      finder = instance_double(Bard::Backup::Finder, timestamps: [Time.parse("2024-07-25T12:00:00Z")])
+    it "delegates to the finder's sorted backups" do
+      backups = [Bard::Backup.new(timestamp: Time.parse("2024-07-25T12:00:00Z"), size: 200)]
+      finder = instance_double(Bard::Backup::Finder, available: backups)
       allow(Bard::Backup::Finder).to receive(:new).with([{ type: :s3 }]).and_return(finder)
 
-      expect(described_class.available(destinations: [{ type: :s3 }])).to eq([Time.parse("2024-07-25T12:00:00Z")])
+      expect(described_class.available(destinations: [{ type: :s3 }])).to eq(backups)
     end
   end
 

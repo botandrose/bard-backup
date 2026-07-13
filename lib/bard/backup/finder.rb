@@ -26,6 +26,19 @@ module Bard
         all.map { |backup| backup[:timestamp] }.uniq.sort
       end
 
+      def available
+        all
+          .group_by { |backup| backup[:timestamp] }
+          .sort_by { |timestamp, _| timestamp }
+          .map do |timestamp, backups|
+            Bard::Backup.new(
+              timestamp:,
+              size: file_size(backups.first[:destination].s3_tree, backups.first[:filename]),
+              destinations: backups.map { |backup| backup[:destination].info },
+            )
+          end
+      end
+
       def find(at: nil)
         backups = all
         raise NotFound, "No backups found" if backups.empty?

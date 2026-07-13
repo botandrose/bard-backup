@@ -45,7 +45,7 @@ Tests require AWS credentials at `spec/support/credentials.json`. In CI, this is
 **Entry points**:
 - `Bard::Backup.create!` accepts destination configs (or reads from `Bard::Config`) and delegates to destination strategies. Returns a `Bard::Backup` instance with timestamp/size/destinations.
 - `Bard::Backup::FileTree.create!` syncs configured data directories to S3.
-- `Bard::Backup.restore!(at:)` downloads the backup nearest `at` (or the latest when omitted), decrypts it if necessary, and loads it into the local database via `backhoe` (drop-and-create). `Bard::Backup.available` lists the available backup timestamps.
+- `Bard::Backup.restore!(at:)` downloads the backup nearest `at` (or the latest when omitted), decrypts it if necessary, and loads it into the local database via `backhoe` (drop-and-create). `Bard::Backup.available` lists the available backups (as `Bard::Backup` objects carrying timestamp and size).
 
 **Destination strategy pattern**: `Destination.build(config)` is a factory that picks the right class based on `:type`. `Destination.resolve(hashes)` is the single entry point both `Database.create!` and `Finder` use — it falls back to the configured destinations, normalizes a lone Hash/Array, and builds them. Each destination resolves its own `encryption_key` (explicit config, falling back to `Bard::Config.current.backup.encryption_key`), so callers never inject it.
 - `S3Destination` — dumps DB locally via backhoe, uploads to S3, runs `Deleter` for retention, verifies previous hour's backup
@@ -65,7 +65,7 @@ end
 - `Encryptor` — AES-256-GCM with HKDF-derived keys and a deterministic IV (HMAC of plaintext), enabling content-addressable encryption
 - `Deleter` — implements the retention policy via `Filter` structs that check time-based granularities
 - `LocalBackhoe` / `CachedLocalBackhoe` — database dump strategies (cached variant avoids conflicts when running parallel destinations)
-- `Finder` — lists backups across destinations and selects one: by timestamp (nearest match), the latest, or the most-recent as a `Bard::Backup` (with size + destination info). Backs `Bard::Backup.available`/`.latest` and `Restore`
+- `Finder` — lists backups across destinations and selects one: by timestamp (nearest match), the latest, or the most-recent as a `Bard::Backup` (with size + destination info). `#available` returns one `Bard::Backup` per timestamp (with size) for listing. Backs `Bard::Backup.available`/`.latest` and `Restore`
 - `Restore` — downloads the backup selected by `Finder`, decrypts it via `S3Tree#get`, and loads it into the local database via backhoe (drop-and-create). Backs `Bard::Backup.restore!`
 - `BackupConfig` — the `backup do ... end` DSL surface (`bard`, `disabled`, `s3 name, **kwargs`); `create!` reads `bard_config.backup.destinations` from it
 - `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data), `bard:backup:data` (data only), and `bard:backup:restore[at]` (restore/list) rake tasks in Rails apps

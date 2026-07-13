@@ -22,7 +22,7 @@ module Bard
     end
 
     def self.available(destinations: nil)
-      Finder.new(destinations).timestamps
+      Finder.new(destinations).available
     end
 
     def self.restore!(at:, drop_and_create: true, destinations: nil)

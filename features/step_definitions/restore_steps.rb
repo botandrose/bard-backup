@@ -6,8 +6,9 @@ Given("the S3 bucket {string} contains these database backups:") do |path, table
   @s3_tree = Bard::Backup::S3Tree.new(path: namespaced(path), **credentials)
   @s3_tree.empty!
   @backup_bodies = {}
-  table.raw.flatten.each do |filename|
+  table.raw.each do |filename, size|
     body = "DUMP:#{filename}"
+    body = body.ljust(Integer(size)) if size
     @backup_bodies[filename] = body
     @s3_tree.put_body filename, body
   end
@@ -38,7 +39,8 @@ When("I restore the encrypted backup nearest {string} with key {string}") do |at
 end
 
 Then("the available backups should be:") do |table|
-  expect(@listed.map { |time| time.iso8601 }).to eq(table.raw.flatten)
+  actual = @listed.map { |backup| [backup.timestamp.iso8601, backup.size.to_s] }
+  expect(actual).to eq(table.raw)
 end
 
 Then("the database should have been loaded from the {string} backup") do |filename|

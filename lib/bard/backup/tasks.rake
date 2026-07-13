@@ -26,9 +26,11 @@ namespace :bard do
 
       destinations = Bard::Config.current.backup.destinations
       if args[:at].to_s.strip.empty?
-        timestamps = Bard::Backup.available(destinations: destinations)
+        backups = Bard::Backup.available(destinations: destinations)
         puts "Available backups:"
-        timestamps.each { |timestamp| puts "  #{timestamp.iso8601}" }
+        backups.each do |backup|
+          puts "  #{backup.timestamp.iso8601}  #{ActiveSupport::NumberHelper.number_to_human_size(backup.size)}"
+        end
       else
         backup = Bard::Backup.restore!(at: args[:at], destinations: destinations)
         puts "Restored database from backup #{backup.timestamp.iso8601}."
