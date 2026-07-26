@@ -11,8 +11,7 @@ module Bard
       # Normalizes destination config into built destinations: falls back to the
       # configured destinations when none are given, and accepts a lone Hash or
       # an Array. A +now+ stamps every destination with one run timestamp (an
-      # explicit per-destination +now+ still wins). Each destination resolves its
-      # own encryption key (see #encryption_key), so callers don't have to inject it.
+      # explicit per-destination +now+ still wins).
       def self.resolve(destination_hashes = nil, now: nil)
         hashes = destination_hashes || Bard::Config.current.backup.destinations
         hashes = hashes.is_a?(Hash) ? [hashes] : Array(hashes)
@@ -27,7 +26,7 @@ module Bard
       private
 
       def encryption_key
-        config[:encryption_key] || Bard::Config.current.backup.encryption_key
+        config[:encryption_key]
       end
 
       def now

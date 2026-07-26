@@ -1,6 +1,5 @@
 require "bard"
 require "bard/plugins/backup"
-require "bard/plugins/encrypt"
 require "bard/backup/database"
 require "bard/backup/file_tree"
 require "bard/backup/finder"

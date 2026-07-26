@@ -10,15 +10,7 @@ RSpec.describe Bard::Backup::UploadDestination do
       expect(destination.send(:encryption_key)).to eq("explicit")
     end
 
-    it "falls back to the configured encryption key" do
-      allow(Bard::Config).to receive(:current).and_return(double(backup: double(encryption_key: "cfg-key")))
-      destination = described_class.new({ type: :upload, urls: ["https://example.com"] })
-
-      expect(destination.send(:encryption_key)).to eq("cfg-key")
-    end
-
-    it "is nil when neither is set" do
-      allow(Bard::Config).to receive(:current).and_return(double(backup: double(encryption_key: nil)))
+    it "is nil when no key is given" do
       destination = described_class.new({ type: :upload, urls: ["https://example.com"] })
 
       expect(destination.send(:encryption_key)).to be_nil

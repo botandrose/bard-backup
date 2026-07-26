@@ -86,21 +86,11 @@ RSpec.describe Bard::Backup::S3Destination do
       })
     end
 
-    it "falls back to the configured encryption key" do
-      allow(Bard::Config).to receive(:current).and_return(double(backup: double(encryption_key: "cfg-key")))
-
-      expect(s3_destination.s3_tree.encryption_key).to eq("cfg-key")
-    end
-
-    it "prefers an explicit encryption key over the configured one" do
-      allow(Bard::Config).to receive(:current).and_return(double(backup: double(encryption_key: "cfg-key")))
-
+    it "uses the explicit encryption key when given" do
       expect(s3_destination(encryption_key: "explicit").s3_tree.encryption_key).to eq("explicit")
     end
 
-    it "leaves S3Tree unencrypted when no key is configured or given" do
-      allow(Bard::Config).to receive(:current).and_return(double(backup: double(encryption_key: nil)))
-
+    it "leaves S3Tree unencrypted when no key is given" do
       expect(s3_destination.s3_tree.encryption_key).to be_nil
     end
   end

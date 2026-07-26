@@ -23,14 +23,13 @@ module Bard
 
       private
 
-      # The raw config enriched with Rails credentials (by name), defaults, the
-      # computed endpoint, and the resolved encryption key.
+      # The raw config enriched with Rails credentials (by name), defaults, and
+      # the computed endpoint.
       def resolved_config
         @resolved_config ||= begin
           credentials = RailsCredentials.find(name: config[:name])
           resolved = { type: :s3, region: "us-west-2" }.merge(credentials).merge(config)
           resolved[:endpoint] ||= "https://s3.#{resolved[:region]}.amazonaws.com"
-          resolved[:encryption_key] ||= Bard::Config.current.backup.encryption_key
           resolved
         end
       end

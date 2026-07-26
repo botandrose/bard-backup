@@ -22,7 +22,6 @@ In a Rails app, configure destinations in `config/bard.rb` using the `Bard::Conf
 ```ruby
 backup do
   s3 "primary", path: "my-bucket/my-project", region: "us-west-2"
-  encrypt true  # optional: encrypt payloads at rest. Reads key from config/master.key.
 end
 ```
 
@@ -33,7 +32,12 @@ bard_backup:
   - name: primary
     access_key_id: ...
     secret_access_key: ...
+    encryption_key: ...  # optional: encrypts payloads at rest with AES-256-GCM
 ```
+
+Adding `encryption_key` is what turns on encryption at rest; omit it and payloads are stored
+in the clear. Changing its value makes existing backups undecryptable, so treat it as
+permanent unless you re-key deliberately.
 
 Then run via the rake tasks provided by the bundled Railtie:
 

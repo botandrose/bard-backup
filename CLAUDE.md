@@ -47,17 +47,18 @@ Tests require AWS credentials at `spec/support/credentials.json`. In CI, this is
 - `Bard::Backup::FileTree.create!` syncs configured data directories to S3.
 - `Bard::Backup.restore!(at:)` downloads the backup nearest `at` (or the latest when omitted), decrypts it if necessary, and loads it into the local database via `backhoe` (drop-and-create). `Bard::Backup.available` lists the available backups (as `Bard::Backup` objects carrying timestamp and size).
 
-**Destination strategy pattern**: `Destination.build(config)` is a factory that picks the right class based on `:type`. `Destination.resolve(hashes)` is the single entry point both `Database.create!` and `Finder` use — it falls back to the configured destinations, normalizes a lone Hash/Array, and builds them. Each destination resolves its own `encryption_key` (explicit config, falling back to `Bard::Config.current.backup.encryption_key`), so callers never inject it.
+**Destination strategy pattern**: `Destination.build(config)` is a factory that picks the right class based on `:type`. `Destination.resolve(hashes)` is the single entry point both `Database.create!` and `Finder` use — it falls back to the configured destinations, normalizes a lone Hash/Array, and builds them. A destination's `encryption_key` comes from its config, which `tasks.rake` merges from the `bard_backup` Rails credentials entry; there is no other source.
 - `S3Destination` — dumps DB locally via backhoe, uploads to S3, runs `Deleter` for retention, verifies previous hour's backup
 - `UploadDestination` — dumps DB and uploads to presigned URLs (multi-threaded)
 
-**Config DSL** (loaded via `bard/plugins/backup` and `bard/plugins/encrypt`; `backup` extends `Bard::Config`, `encrypt` extends `Bard::BackupConfig`):
+**Config DSL** (loaded via `bard/plugins/backup`; `backup` extends `Bard::Config`):
 ```ruby
 backup do
   s3 "primary", path: "bucket/subfolder", region: "us-west-2"
-  encrypt true  # reads key from config/master.key
 end
 ```
+Encryption at rest is opt-in per destination via an `encryption_key` in the `bard_backup`
+credentials entry — there is no DSL toggle.
 
 **Key classes**:
 - `S3Tree` — `Data.define`-based S3 wrapper used by both `S3Destination` and `FileTree`. Methods: `list_objects`, `put_file`, `put_body`, `get`, `delete_keys`, `mv`, `empty!`. Supports encryption via `Encryptor` and STS `session_token`.

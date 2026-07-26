@@ -36,7 +36,7 @@ RSpec.describe Bard::Backup::Destination do
     end
 
     it "falls back to the configured destinations when none are given" do
-      backup_config = double(destinations: [{ type: :upload, urls: ["https://example.com"] }], encryption_key: nil)
+      backup_config = double(destinations: [{ type: :upload, urls: ["https://example.com"] }])
       allow(Bard::Config).to receive(:current).and_return(double(backup: backup_config))
 
       destinations = described_class.resolve

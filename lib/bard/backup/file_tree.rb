@@ -15,7 +15,6 @@ module Bard
         return if data_paths.empty?
 
         encryption_key = s3_config.delete(:encryption_key)
-        encryption_key ||= bard_config&.backup&.encryption_key
 
         s3_tree = S3Tree.new(path: "#{bucket}/#{project_name}", encryption_key: encryption_key, **s3_config)
         new(s3_tree, data_paths).call
