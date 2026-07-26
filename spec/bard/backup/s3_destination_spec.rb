@@ -93,6 +93,29 @@ RSpec.describe Bard::Backup::S3Destination do
     it "leaves S3Tree unencrypted when no key is given" do
       expect(s3_destination.s3_tree.encryption_key).to be_nil
     end
+
+    it "exposes nil from #encryption_key when no key is given" do
+      expect(s3_destination.encryption_key).to be_nil
+    end
+  end
+
+  describe "#encryption_key" do
+    it "resolves the key supplied by Rails credentials" do
+      stub_const(
+        "Rails",
+        double(application: double(credentials: double(bard_backup: {
+          name: "primary",
+          path: "bucket/folder",
+          access_key_id: "x",
+          secret_access_key: "y",
+          encryption_key: "from-credentials",
+        }))),
+      )
+
+      destination = described_class.new({ name: "primary", type: :s3 })
+
+      expect(destination.encryption_key).to eq("from-credentials")
+    end
   end
 
   describe "#info" do

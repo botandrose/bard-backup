@@ -23,11 +23,11 @@ module Bard
         raise NotImplementedError
       end
 
-      private
-
       def encryption_key
         config[:encryption_key]
       end
+
+      private
 
       def now
         @now ||= config.fetch(:now, Time.now.utc)

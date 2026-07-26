@@ -21,6 +21,11 @@ module Bard
         resolved_config.slice(:name, :type, :path, :region)
       end
 
+      # Credentials can supply the key, so resolve rather than reading raw config.
+      def encryption_key
+        resolved_config[:encryption_key]
+      end
+
       private
 
       # The raw config enriched with Rails credentials (by name), defaults, and
