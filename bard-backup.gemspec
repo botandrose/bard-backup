@@ -31,7 +31,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency "aws-sdk-s3", "~>1.0"
   spec.add_dependency "rexml"
   spec.add_dependency "rails"
-  spec.add_dependency "bard"
+  # Config core only: this reads Bard::Config to find each project's backup settings.
+  # Constrained so an app can never resolve back to the 2.x monolith and its CLI.
+  spec.add_dependency "bard", "~> 3.0"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
