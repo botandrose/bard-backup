@@ -1,4 +1,3 @@
-require "bard/backup"
 require "rails"
 
 module Bard
