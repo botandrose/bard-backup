@@ -4,6 +4,7 @@ require "bard/backup/database"
 require "bard/backup/file_tree"
 require "bard/backup/finder"
 require "bard/backup/restore"
+require "bard/backup/rekey"
 require "bard/backup/railtie" if defined?(Rails)
 
 module Bard
@@ -14,6 +15,24 @@ module Bard
       backup = Database.create!(destination_hashes, **config)
       FileTree.create!(**config.slice(*FILE_TREE_KEYS))
       backup
+    end
+
+    def self.encrypt_existing!(destination_hashes = nil, **config)
+      destination_hashes = [config] if destination_hashes.nil? && !config.empty?
+      trees = Destination.resolve(destination_hashes)
+        .select { |destination| destination.respond_to?(:s3_tree_config) }
+        .map { |destination| [destination.s3_tree_config, destination.encryption_key, destination.info[:name]] }
+
+      file_tree_config = FileTree.s3_tree_config(**config.slice(*FILE_TREE_KEYS, :data_paths, :project_name, :bucket))
+      if file_tree_config
+        key = file_tree_config.delete(:encryption_key)
+        trees << [file_tree_config, key, file_tree_config[:path]]
+      end
+
+      missing = trees.reject { |_, key, _| key }.map(&:last)
+      raise Error, "No encryption_key for #{missing.join(", ")}" if missing.any?
+
+      trees.map { |tree_config, key, _| Rekey.call(tree_config:, to_key: key) }
     end
 
     def self.latest

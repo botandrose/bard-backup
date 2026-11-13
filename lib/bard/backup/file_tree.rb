@@ -8,16 +8,21 @@ module Bard
       MANIFEST_PATH = ".bard-file-tree-sync.json"
       DEFAULT_BUCKET = "bard-data"
 
-      def self.create!(data_paths: nil, project_name: nil, bucket: DEFAULT_BUCKET, **s3_config)
-        bard_config = defined?(Bard::Config) ? Bard::Config.current : nil
-        data_paths ||= bard_config&.data || []
-        project_name ||= bard_config&.project_name
+      def self.create!(data_paths: nil, **options)
+        data_paths ||= configured_data_paths
+        tree_config = s3_tree_config(data_paths:, **options)
+        new(S3Tree.new(**tree_config), data_paths).call if tree_config
+      end
+
+      def self.s3_tree_config(data_paths: nil, project_name: nil, bucket: DEFAULT_BUCKET, **s3_config)
+        data_paths ||= configured_data_paths
         return if data_paths.empty?
+        project_name ||= Bard::Config.current.project_name if defined?(Bard::Config)
+        { path: "#{bucket}/#{project_name}", **s3_config }
+      end
 
-        encryption_key = s3_config.delete(:encryption_key)
-
-        s3_tree = S3Tree.new(path: "#{bucket}/#{project_name}", encryption_key: encryption_key, **s3_config)
-        new(s3_tree, data_paths).call
+      def self.configured_data_paths
+        defined?(Bard::Config) ? Bard::Config.current.data : []
       end
 
       def initialize(s3_tree, data_paths)

@@ -14,7 +14,12 @@ module Bard
       end
 
       def s3_tree
-        @s3_tree ||= S3Tree.new(**resolved_config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region, :encryption_key).compact)
+        @s3_tree ||= S3Tree.new(**s3_tree_config, **resolved_config.slice(:encryption_key).compact)
+      end
+
+      # The connection alone, without the key, so a re-key can read objects as stored.
+      def s3_tree_config
+        resolved_config.slice(:endpoint, :path, :access_key_id, :secret_access_key, :session_token, :region).compact
       end
 
       def info

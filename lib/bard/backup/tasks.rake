@@ -19,6 +19,20 @@ namespace :bard do
       Bard::Backup::FileTree.create!(**Bard::Backup::RailsCredentials.find)
     end
 
+    desc "Encrypt the backups and data files stored before encryption was enabled"
+    task :encrypt => :environment do
+      require "bard/backup"
+      require "bard/backup/rails_credentials"
+
+      destinations = Bard::Config.current.backup.destinations.map do |dest|
+        Bard::Backup::RailsCredentials.find(name: dest[:name]).merge(dest)
+      end
+
+      Bard::Backup.encrypt_existing!(destinations, **Bard::Backup::RailsCredentials.find).each do |result|
+        puts "#{result[:path]}: encrypted #{result[:encrypted].size}, already encrypted #{result[:skipped].size}"
+      end
+    end
+
     desc "Restore the database backup nearest a timestamp (no timestamp lists available backups)"
     task :restore, [:at] => :environment do |_task, args|
       require "bard/backup"

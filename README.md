@@ -39,11 +39,17 @@ Adding `encryption_key` is what turns on encryption at rest; omit it and payload
 in the clear. Changing its value makes existing backups undecryptable, so treat it as
 permanent unless you re-key deliberately.
 
+Adding a key only encrypts what is uploaded afterwards. Database dumps stored before it still
+restore (they are recognized as plain gzip), and `rake bard:backup:encrypt` rewrites them and
+the data file tree in place under the key, verifying each object as it goes. It skips anything
+already encrypted, so it is safe to rerun.
+
 Then run via the rake tasks provided by the bundled Railtie:
 
 ```bash
-rake bard:backup        # database backup + data file-tree sync
-rake bard:backup:data   # data file-tree sync only
+rake bard:backup          # database backup + data file-tree sync
+rake bard:backup:data     # data file-tree sync only
+rake bard:backup:encrypt  # encrypt everything stored before encryption_key was added
 ```
 
 ## Restoring
