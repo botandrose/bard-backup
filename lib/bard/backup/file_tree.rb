@@ -92,6 +92,8 @@ module Bard
         data_paths.each do |data_path|
           Dir.glob("#{data_path}/**/*").each do |file|
             next unless File.file?(file)
+            # Rails keeps Solid Queue/Cache/Cable's SQLite databases in storage/: runtime state, not data
+            next if File.basename(file).match?(/(\A|_)(queue|cache|cable)\.sqlite3(-wal|-shm|-journal)?\z/)
             stat = File.stat(file)
             result[file] = { mtime: stat.mtime.to_f, size: stat.size }
           end

@@ -57,6 +57,34 @@ RSpec.describe Bard::Backup::FileTree do
       end
     end
 
+    context "with Solid Queue, Cache and Cable databases in a data path" do
+      let(:data_paths) { ["storage"] }
+      let(:solid_files) do
+        %w[
+          storage/production_queue.sqlite3 storage/production_queue.sqlite3-wal storage/production_queue.sqlite3-shm
+          storage/app_production_cache.sqlite3 storage/production_cable.sqlite3-journal
+        ]
+      end
+
+      before do
+        FileUtils.mkdir_p("storage/ab/cd")
+        File.write("storage/ab/cd/abcdblob", "upload")
+        File.write("storage/queue-photo.sqlite3.jpg", "upload")
+        solid_files.each { |file| File.write(file, "state") }
+        allow(s3_tree).to receive(:list_objects).and_return({ "storage/production_queue.sqlite3" => "abc123" })
+        allow(s3_tree).to receive(:put_file)
+        allow(s3_tree).to receive(:delete_keys)
+      end
+
+      it "syncs the uploads but not the databases, and removes databases synced before" do
+        subject.call
+        expect(s3_tree).to have_received(:put_file).with("storage/ab/cd/abcdblob", "storage/ab/cd/abcdblob")
+        expect(s3_tree).to have_received(:put_file).with("storage/queue-photo.sqlite3.jpg", "storage/queue-photo.sqlite3.jpg")
+        solid_files.each { |file| expect(s3_tree).not_to have_received(:put_file).with(file, anything) }
+        expect(s3_tree).to have_received(:delete_keys).with(["storage/production_queue.sqlite3"])
+      end
+    end
+
     context "subsequent run (manifest exists)" do
       before do
         FileUtils.mkdir_p("data/images")
