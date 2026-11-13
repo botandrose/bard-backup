@@ -29,7 +29,8 @@ namespace :bard do
       end
 
       Bard::Backup.encrypt_existing!(destinations, **Bard::Backup::RailsCredentials.find).each do |result|
-        puts "#{result[:path]}: encrypted #{result[:encrypted].size}, already encrypted #{result[:skipped].size}"
+        gone = Array(result[:gone])
+        puts "#{result[:path]}: encrypted #{result[:encrypted].size}, already encrypted #{result[:skipped].size}#{", gone before it could be read #{gone.size}" if gone.any?}"
       end
     end
 

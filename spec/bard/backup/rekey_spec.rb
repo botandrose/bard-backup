@@ -6,6 +6,7 @@ RSpec.describe Bard::Backup::Rekey do
   let(:tree_config) { { path: "bucket/project", access_key_id: "abc", secret_access_key: "123", region: "us-west-2" } }
   let(:bucket) { {} }
   let(:puts_seen) { [] }
+  let(:listed_but_gone) { [] }
 
   before do
     client = Aws::S3::Client.new(stub_responses: true)
@@ -14,9 +15,9 @@ RSpec.describe Bard::Backup::Rekey do
       bucket[context.params[:key]] = context.params[:body].b
       {}
     })
-    client.stub_responses(:get_object, ->(context) { { body: bucket.fetch(context.params[:key]) } })
+    client.stub_responses(:get_object, ->(context) { bucket.key?(context.params[:key]) ? { body: bucket[context.params[:key]] } : "NoSuchKey" })
     client.stub_responses(:list_objects_v2, ->(context) {
-      { contents: bucket.keys.map { |key| { key:, etag: %("etag") } }, is_truncated: false }
+      { contents: (bucket.keys + listed_but_gone).map { |key| { key:, etag: %("etag") } }, is_truncated: false }
     })
     allow(Aws::S3::Client).to receive(:new).and_return(client)
   end
@@ -31,9 +32,19 @@ RSpec.describe Bard::Backup::Rekey do
 
     result = described_class.call(tree_config:, to_key: key)
 
-    expect(result).to eq(path: "bucket/project", encrypted: ["2024-07-25T12:00:00Z.sql.gz", "data/cat.jpg"], skipped: [])
+    expect(result).to eq(path: "bucket/project", encrypted: ["2024-07-25T12:00:00Z.sql.gz", "data/cat.jpg"], skipped: [], gone: [])
     expect(decrypt("2024-07-25T12:00:00Z.sql.gz")).to eq("\x1f\x8bdump \xff".b)
     expect(decrypt("data/cat.jpg")).to eq("catdata")
+  end
+
+  it "skips an object that disappears mid-run, as when the hourly backup prunes an old dump" do
+    store("a.sql.gz", "\x1f\x8bdump".b)
+    listed_but_gone << "project/2024-07-25T11:00:00Z.sql.gz"
+
+    result = described_class.call(tree_config:, to_key: key)
+
+    expect(result).to eq(path: "bucket/project", encrypted: ["a.sql.gz"], skipped: [], gone: ["2024-07-25T11:00:00Z.sql.gz"])
+    expect(bucket.keys).to eq(["project/a.sql.gz"])
   end
 
   it "leaves objects already encrypted under the key alone, so a rerun is a no-op" do
@@ -41,7 +52,7 @@ RSpec.describe Bard::Backup::Rekey do
 
     result = described_class.call(tree_config:, to_key: key)
 
-    expect(result).to eq(path: "bucket/project", encrypted: [], skipped: ["a.sql.gz"])
+    expect(result).to eq(path: "bucket/project", encrypted: [], skipped: ["a.sql.gz"], gone: [])
     expect(puts_seen).to be_empty
   end
 

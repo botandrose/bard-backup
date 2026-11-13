@@ -10,9 +10,15 @@ module Bard
       end
 
       def call
-        result = { path: tree_config[:path], encrypted: [], skipped: [] }
+        result = { path: tree_config[:path], encrypted: [], skipped: [], gone: [] }
         stored_tree.files.each do |file|
-          stored = stored_tree.get(file).b
+          stored = begin
+            stored_tree.get(file).b
+          rescue Aws::S3::Errors::NoSuchKey
+            # the hourly backup pruned it after we listed it
+            result[:gone] << file
+            next
+          end
           if under_target_key?(stored)
             result[:skipped] << file
           else
