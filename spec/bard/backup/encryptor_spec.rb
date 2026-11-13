@@ -32,4 +32,8 @@ RSpec.describe Bard::Backup::Encryptor do
   it "round-trips empty string" do
     expect(encryptor.decrypt(encryptor.encrypt(""))).to eq("")
   end
+
+  it "raises CipherError on input too short to hold an IV and auth tag" do
+    expect { encryptor.decrypt("short") }.to raise_error(OpenSSL::Cipher::CipherError)
+  end
 end

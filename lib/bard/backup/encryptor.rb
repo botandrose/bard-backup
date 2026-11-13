@@ -21,6 +21,7 @@ module Bard
 
       def decrypt(data)
         data = data.b if data.encoding != Encoding::BINARY
+        raise OpenSSL::Cipher::CipherError, "too short to be ciphertext" if data.bytesize < 28
         cipher = OpenSSL::Cipher.new("aes-256-gcm")
         cipher.decrypt
         cipher.key = @encrypt_key

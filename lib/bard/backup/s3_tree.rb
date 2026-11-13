@@ -72,7 +72,7 @@ module Bard
           key: [folder_prefix, remote_key].compact.join("/"),
         })
         body = response.body.read
-        body = encryptor.decrypt(body) if encryptor
+        body = decrypt(body) if encryptor
         body
       end
 
@@ -111,6 +111,14 @@ module Bard
 
       def encryptor
         Encryptor.new(encryption_key) if encryption_key
+      end
+
+      def decrypt(body)
+        encryptor.decrypt(body)
+      rescue OpenSSL::Cipher::CipherError
+        body = body.b
+        raise unless body.start_with?("\x1f\x8b".b) # a database dump stored before encryption was enabled
+        body
       end
 
       def client

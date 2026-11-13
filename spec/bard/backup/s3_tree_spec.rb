@@ -75,4 +75,30 @@ RSpec.describe Bard::Backup::S3Tree do
       expect(url).to include("/dump.sql.gz?")
     end
   end
+
+  describe "#get" do
+    let(:key) { "test-master-key-0123456789abcdef" }
+    subject(:tree) { described_class.new(path: "bard-backup/my-project", access_key_id:, secret_access_key:, region:, encryption_key: key) }
+
+    def stub_body(body)
+      stub_client = Aws::S3::Client.new(stub_responses: true)
+      stub_client.stub_responses(:get_object, body: body)
+      allow(Aws::S3::Client).to receive(:new).and_return(stub_client)
+    end
+
+    it "decrypts with the encryption key" do
+      stub_body(Bard::Backup::Encryptor.new(key).encrypt("\x1f\x8bdump".b))
+      expect(tree.get("a.sql.gz")).to eq("\x1f\x8bdump".b)
+    end
+
+    it "returns a gzip dump stored before encryption was enabled as-is" do
+      stub_body("\x1f\x8bplain dump".b)
+      expect(tree.get("a.sql.gz")).to eq("\x1f\x8bplain dump".b)
+    end
+
+    it "still raises on anything else that does not decrypt" do
+      stub_body(Bard::Backup::Encryptor.new("wrong-key-0123456789abcdefghij").encrypt("dump"))
+      expect { tree.get("a.sql.gz") }.to raise_error(OpenSSL::Cipher::CipherError)
+    end
+  end
 end
