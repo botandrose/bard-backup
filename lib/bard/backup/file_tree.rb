@@ -31,13 +31,17 @@ module Bard
       end
 
       def call
-        manifest = load_manifest
-        local_files = collect_local_files
+        File.open("#{MANIFEST_PATH}.lock", File::CREAT | File::RDWR) do |lock|
+          return unless lock.flock(File::LOCK_EX | File::LOCK_NB)
 
-        if manifest.empty?
-          sync_from_s3(local_files)
-        else
-          sync_from_manifest(local_files, manifest)
+          manifest = load_manifest
+          local_files = collect_local_files
+
+          if manifest.empty?
+            sync_from_s3(local_files)
+          else
+            sync_from_manifest(local_files, manifest)
+          end
         end
       end
 
@@ -75,7 +79,7 @@ module Bard
 
         local_files.each do |path, stat|
           md5 = Digest::MD5.file(path).hexdigest
-          unless remote[path] == md5
+          unless remote[path] == s3_tree.etag_for(path)
             s3_tree.put_file(path, path)
           end
           new_manifest[path] = { "md5" => md5, "mtime" => stat[:mtime], "size" => stat[:size] }

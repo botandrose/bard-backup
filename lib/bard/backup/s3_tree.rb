@@ -1,5 +1,6 @@
 require "aws-sdk-s3"
 require "fileutils"
+require "digest/md5"
 require "bard/backup/encryptor"
 
 module Bard
@@ -50,6 +51,13 @@ module Bard
 
       def put_file(local_path, remote_key)
         put_body(remote_key, File.binread(local_path))
+      end
+
+      # S3's ETag for a single-part upload is the MD5 of the stored bytes, i.e. the ciphertext when encrypting
+      def etag_for(local_path)
+        body = File.binread(local_path)
+        body = encryptor.encrypt(body) if encryptor
+        Digest::MD5.hexdigest(body)
       end
 
       def put_body(remote_key, body)

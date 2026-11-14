@@ -94,7 +94,7 @@ end
 
 After do
   FileUtils.rm_rf("data") if Dir.exist?("data")
-  FileUtils.rm_f(Bard::Backup::FileTree::MANIFEST_PATH)
+  FileUtils.rm_f([Bard::Backup::FileTree::MANIFEST_PATH, "#{Bard::Backup::FileTree::MANIFEST_PATH}.lock"])
   if @s3_tree
     @s3_tree.empty!
   end

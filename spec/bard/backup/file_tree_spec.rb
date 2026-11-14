@@ -24,6 +24,7 @@ RSpec.describe Bard::Backup::FileTree do
         FileUtils.mkdir_p("data/images")
         File.write("data/images/cat.jpg", "catdata")
         allow(s3_tree).to receive(:list_objects).and_return({})
+        allow(s3_tree).to receive(:etag_for) { |path| Digest::MD5.file(path).hexdigest }
         allow(s3_tree).to receive(:put_file)
         allow(s3_tree).to receive(:delete_keys)
       end
@@ -57,6 +58,45 @@ RSpec.describe Bard::Backup::FileTree do
       end
     end
 
+    context "first run (no manifest) with encryption" do
+      let(:client) { Aws::S3::Client.new(stub_responses: true) }
+      let(:s3_tree) do
+        Bard::Backup::S3Tree.new(path: "bard-data/project", access_key_id: "a", secret_access_key: "b", region: "us-west-2", encryption_key: "key")
+      end
+
+      before do
+        FileUtils.mkdir_p("data/images")
+        File.write("data/images/cat.jpg", "catdata")
+        File.write("data/images/dog.jpg", "dogdata")
+        ciphertext_md5 = Digest::MD5.hexdigest(Bard::Backup::Encryptor.new("key").encrypt("catdata"))
+        client.stub_responses(:list_objects_v2, contents: [{ key: "project/data/images/cat.jpg", etag: %("#{ciphertext_md5}") }])
+        allow(Aws::S3::Client).to receive(:new).and_return(client)
+      end
+
+      it "uploads only the files whose ciphertext is not already on S3" do
+        subject.call
+        uploads = client.api_requests.select { |request| request[:operation_name] == :put_object }
+        expect(uploads.map { |request| request[:params][:key] }).to eq ["project/data/images/dog.jpg"]
+      end
+    end
+
+    context "while another sync is running" do
+      before do
+        FileUtils.mkdir_p("data/images")
+        File.write("data/images/cat.jpg", "catdata")
+        allow(s3_tree).to receive(:list_objects)
+      end
+
+      it "leaves the sync to the run already in progress" do
+        File.open("#{manifest_path}.lock", File::CREAT | File::RDWR) do |lock|
+          lock.flock(File::LOCK_EX)
+          subject.call
+        end
+        expect(s3_tree).not_to have_received(:list_objects)
+        expect(File.exist?(manifest_path)).to be false
+      end
+    end
+
     context "with Solid Queue, Cache and Cable databases in a data path" do
       let(:data_paths) { ["storage"] }
       let(:solid_files) do
@@ -72,6 +112,7 @@ RSpec.describe Bard::Backup::FileTree do
         File.write("storage/queue-photo.sqlite3.jpg", "upload")
         solid_files.each { |file| File.write(file, "state") }
         allow(s3_tree).to receive(:list_objects).and_return({ "storage/production_queue.sqlite3" => "abc123" })
+        allow(s3_tree).to receive(:etag_for) { |path| Digest::MD5.file(path).hexdigest }
         allow(s3_tree).to receive(:put_file)
         allow(s3_tree).to receive(:delete_keys)
       end
