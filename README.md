@@ -50,6 +50,7 @@ Then run via the rake tasks provided by the bundled Railtie:
 rake bard:backup          # database backup + data file-tree sync
 rake bard:backup:data     # data file-tree sync only
 rake bard:backup:encrypt  # encrypt everything stored before encryption_key was added
+rake bard:backup:check    # prove the latest backup restores (see below)
 ```
 
 Data directories are declared once in `config/bard.rb`, and `bard data` copies the same ones:
@@ -63,6 +64,42 @@ removed locally (the bucket's versioning keeps the old copies). When Active Stor
 uploads on local disk outside every declared data path, `bard:backup` and `bard:backup:data`
 raise `Bard::Backup::UncoveredUploads` after backing up everything else, so the gap shows up
 in exception notifications instead of in a failed restore.
+
+## Checking restores
+
+`rake bard:backup:check` downloads the latest database backup, decrypts it, and loads it with
+backhoe into a scratch database beside the live one (`<database>_restore_check`, or a temp
+file for SQLite). It then checks that the restored database has tables, a non-empty
+`schema_migrations`, and at least one table with rows. It drops the scratch database whatever
+the outcome. Before loading, it rejects dumps that are not valid gzip, fail their CRC, have
+bytes appended after the gzip stream, or end before mysqldump's or pg_dump's completion line.
+Any problem raises `Bard::Backup::RestoreCheck::Failed`, naming the backup and every problem
+found. On success it prints a line such as:
+
+```
+Restore check passed for backup 2026-11-18T03:00:00Z: 42 tables, 183920 rows
+```
+
+Schedule it daily, away from the hourly backup, with whenever:
+
+```ruby
+every 1.day, at: "3:30 am" do
+  rake "bard:backup:check"
+end
+```
+
+or with Solid Queue in `config/recurring.yml`:
+
+```yaml
+production:
+  bard_backup_check:
+    command: system "bin/rake bard:backup:check"
+    schedule: every day at 3:30am
+    queue: serial
+```
+
+The database user needs permission to create and drop the scratch database, and the server
+needs disk space for a second copy of the database while the check runs.
 
 ## Restoring
 

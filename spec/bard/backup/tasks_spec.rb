@@ -42,3 +42,20 @@ RSpec.describe "bard:backup" do
       'Active Storage keeps uploads on this server in storage, which bard.rb does not declare as data, so they are not backed up. Add it to `data` in bard.rb.')
   end
 end
+
+RSpec.describe "bard:backup:check" do
+  before do
+    Rake.application = Rake::Application.new
+    Rake::Task.define_task(:environment)
+    load "bard/backup/tasks.rake"
+  end
+
+  it "checks that the latest backup of the configured destinations restores, and prints the result" do
+    allow(Bard::Config).to receive(:current).and_return(double(backup: double(destinations: [{ name: "primary", type: :s3 }])))
+    result = double(to_s: "Restore check passed for backup 2024-07-25T12:00:00Z: 3 tables, 4 rows")
+    expect(Bard::Backup).to receive(:check_restore!).with(destinations: [{ name: "primary", type: :s3 }]).and_return(result)
+
+    expect { Rake::Task["bard:backup:check"].invoke }
+      .to output("Restore check passed for backup 2024-07-25T12:00:00Z: 3 tables, 4 rows\n").to_stdout
+  end
+end

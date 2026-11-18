@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "backhoe"
+  spec.add_dependency "backhoe", ">= 0.11"
   spec.add_dependency "aws-sdk-s3", "~>1.0"
   spec.add_dependency "rexml"
   spec.add_dependency "rails"

@@ -36,6 +36,12 @@ namespace :bard do
       end
     end
 
+    desc "Restore the latest database backup into a scratch database and check that it holds data"
+    task :check => :environment do
+      require "bard/backup"
+      puts Bard::Backup.check_restore!(destinations: Bard::Config.current.backup.destinations)
+    end
+
     desc "Restore the database backup nearest a timestamp (no timestamp lists available backups)"
     task :restore, [:at] => :environment do |_task, args|
       require "bard/backup"

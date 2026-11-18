@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 bard-backup is a Ruby gem that provides automated backup for Bard projects. It:
 - Dumps the database, uploads to S3, deletes old backups using a retention heuristic (48 hours, 30 days, 26 weeks, 24 months, then yearly), and verifies the previous hour's backup exists.
 - Syncs configured data directories to S3 via a manifest-cached file tree (`Bard::Backup::FileTree`).
+- Checks on a schedule that the latest dump restores into a scratch database (`Bard::Backup::RestoreCheck`).
 - Optionally encrypts uploaded payloads at rest with AES-256-GCM (`Bard::Backup::Encryptor`).
 
 ## Commands
@@ -68,8 +69,9 @@ credentials entry — there is no DSL toggle.
 - `LocalBackhoe` / `CachedLocalBackhoe` — database dump strategies (cached variant avoids conflicts when running parallel destinations)
 - `Finder` — lists backups across destinations and selects one: by timestamp (nearest match), the latest, or the most-recent as a `Bard::Backup` (with size + destination info). `#available` returns one `Bard::Backup` per timestamp (with size) for listing. Backs `Bard::Backup.available`/`.latest` and `Restore`
 - `Restore` — downloads the backup selected by `Finder`, decrypts it via `S3Tree#get`, and loads it into the local database via backhoe (drop-and-create). Backs `Bard::Backup.restore!`
+- `RestoreCheck` — restores the latest backup into a scratch database beside the live one (via `Backhoe::Load`), rejects corrupt or truncated dumps first, checks the restored tables hold data, drops the scratch database, and raises `RestoreCheck::Failed` listing every problem. Backs `Bard::Backup.check_restore!` and `bard:backup:check`
 - `UploadCoverage` — raises `UncoveredUploads` when Active Storage's service keeps files on local disk outside the declared `data` paths; `bard:backup` and `bard:backup:data` run it after backing up
 - `Rekey` — rewrites every object under an S3 path so it is encrypted under a key (from plaintext, or from an old key via `from_key:`), skipping objects already under it and reading each rewrite back. Backs `Bard::Backup.encrypt_existing!` and `bard:backup:encrypt`
 - `BackupConfig` — the `backup do ... end` DSL surface (`bard`, `disabled`, `s3 name, **kwargs`); `create!` reads `bard_config.backup.destinations` from it
-- `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data), `bard:backup:data` (data only), `bard:backup:encrypt` (encrypt pre-key backups and data files), and `bard:backup:restore[at]` (restore/list) rake tasks in Rails apps
+- `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data), `bard:backup:data` (data only), `bard:backup:encrypt` (encrypt pre-key backups and data files), `bard:backup:check` (scheduled restore check), and `bard:backup:restore[at]` (restore/list) rake tasks in Rails apps
 - `bard/plugins/backup_restore.rb` — registers the `bard backup restore [TIMESTAMP]` CLI subcommand (loaded by the `bard` CLI via `Gem.find_files`); shells out to the `bard:backup:restore` rake task

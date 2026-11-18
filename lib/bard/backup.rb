@@ -4,6 +4,7 @@ require "bard/backup/database"
 require "bard/backup/file_tree"
 require "bard/backup/finder"
 require "bard/backup/restore"
+require "bard/backup/restore_check"
 require "bard/backup/rekey"
 require "bard/backup/upload_coverage"
 require "bard/backup/railtie" if defined?(Rails)
@@ -46,6 +47,10 @@ module Bard
 
     def self.restore!(at:, drop_and_create: true, destinations: nil)
       Restore.call(at: at, drop_and_create: drop_and_create, destinations: destinations)
+    end
+
+    def self.check_restore!(destinations: nil, database: nil)
+      RestoreCheck.call(destinations:, database:)
     end
 
     attr_reader :timestamp, :size, :destinations
