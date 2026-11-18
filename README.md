@@ -2,7 +2,7 @@
 
 Bard::Backup handles backups for a bard project:
 1. Takes a database dump and uploads it to S3 (or PUTs it to presigned URLs)
-2. Syncs configured data directories to S3 with a local manifest cache, skipping the Solid Queue, Cache and Cable SQLite databases Rails keeps in `storage/`
+2. Syncs configured data directories to S3 with a local manifest cache, skipping the SQLite databases Rails keeps in `storage/` (the database dump covers the app's own)
 3. Deletes old database backups using a backoff heuristic: 48 hours, 30 days, 26 weeks, 24 months, then yearly
 4. Raises an error if we don't have a database backup from the previous hour
 5. Optionally encrypts uploaded payloads at rest with AES-256-GCM

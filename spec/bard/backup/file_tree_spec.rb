@@ -97,12 +97,13 @@ RSpec.describe Bard::Backup::FileTree do
       end
     end
 
-    context "with Solid Queue, Cache and Cable databases in a data path" do
+    context "with SQLite databases in a data path" do
       let(:data_paths) { ["storage"] }
       let(:solid_files) do
         %w[
           storage/production_queue.sqlite3 storage/production_queue.sqlite3-wal storage/production_queue.sqlite3-shm
           storage/app_production_cache.sqlite3 storage/production_cable.sqlite3-journal
+          storage/production.sqlite3 storage/production.sqlite3-wal
         ]
       end
 
