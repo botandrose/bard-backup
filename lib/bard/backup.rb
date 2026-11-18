@@ -5,6 +5,7 @@ require "bard/backup/file_tree"
 require "bard/backup/finder"
 require "bard/backup/restore"
 require "bard/backup/rekey"
+require "bard/backup/upload_coverage"
 require "bard/backup/railtie" if defined?(Rails)
 
 module Bard

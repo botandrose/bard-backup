@@ -21,3 +21,24 @@ RSpec.describe "bard:backup:encrypt" do
       .to output("bucket/project: encrypted 2, already encrypted 1\n").to_stdout
   end
 end
+
+RSpec.describe "bard:backup" do
+  before do
+    Rake.application = Rake::Application.new
+    Rake::Task.define_task(:environment)
+    load "bard/backup/tasks.rake"
+    allow(Bard::Config).to receive(:current).and_return(double(backup: double(destinations: [{ name: "primary", type: :s3 }]), data: ["public/userfiles"]))
+    allow(Bard::Backup::RailsCredentials).to receive(:find).and_return({})
+  end
+
+  it "backs up first, then fails when Active Storage keeps uploads on disk outside the declared data paths" do
+    require "active_storage"
+    require "active_storage/service"
+    require "active_storage/service/disk_service"
+    stub_const("ActiveStorage::Blob", double(service: ActiveStorage::Service::DiskService.new(root: File.expand_path("storage"))))
+    expect(Bard::Backup).to receive(:create!).with([{ name: "primary", type: :s3 }])
+
+    expect { Rake::Task["bard:backup"].invoke }.to raise_error(Bard::Backup::UncoveredUploads,
+      'Active Storage keeps uploads on this server in storage, which bard.rb does not declare as data, so they are not backed up. Add it to `data` in bard.rb.')
+  end
+end

@@ -68,6 +68,7 @@ credentials entry — there is no DSL toggle.
 - `LocalBackhoe` / `CachedLocalBackhoe` — database dump strategies (cached variant avoids conflicts when running parallel destinations)
 - `Finder` — lists backups across destinations and selects one: by timestamp (nearest match), the latest, or the most-recent as a `Bard::Backup` (with size + destination info). `#available` returns one `Bard::Backup` per timestamp (with size) for listing. Backs `Bard::Backup.available`/`.latest` and `Restore`
 - `Restore` — downloads the backup selected by `Finder`, decrypts it via `S3Tree#get`, and loads it into the local database via backhoe (drop-and-create). Backs `Bard::Backup.restore!`
+- `UploadCoverage` — raises `UncoveredUploads` when Active Storage's service keeps files on local disk outside the declared `data` paths; `bard:backup` and `bard:backup:data` run it after backing up
 - `Rekey` — rewrites every object under an S3 path so it is encrypted under a key (from plaintext, or from an old key via `from_key:`), skipping objects already under it and reading each rewrite back. Backs `Bard::Backup.encrypt_existing!` and `bard:backup:encrypt`
 - `BackupConfig` — the `backup do ... end` DSL surface (`bard`, `disabled`, `s3 name, **kwargs`); `create!` reads `bard_config.backup.destinations` from it
 - `Railtie` — loads `tasks.rake` which provides `bard:backup` (DB + data), `bard:backup:data` (data only), `bard:backup:encrypt` (encrypt pre-key backups and data files), and `bard:backup:restore[at]` (restore/list) rake tasks in Rails apps

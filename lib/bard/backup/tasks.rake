@@ -9,6 +9,7 @@ namespace :bard do
     end
 
     Bard::Backup.create!(destinations, **Bard::Backup::RailsCredentials.find)
+    Bard::Backup::UploadCoverage.check!
   end
 
   namespace :backup do
@@ -17,6 +18,7 @@ namespace :bard do
       require "bard/backup"
       require "bard/backup/rails_credentials"
       Bard::Backup::FileTree.create!(**Bard::Backup::RailsCredentials.find)
+      Bard::Backup::UploadCoverage.check!
     end
 
     desc "Encrypt the backups and data files stored before encryption was enabled"

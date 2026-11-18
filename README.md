@@ -52,6 +52,18 @@ rake bard:backup:data     # data file-tree sync only
 rake bard:backup:encrypt  # encrypt everything stored before encryption_key was added
 ```
 
+Data directories are declared once in `config/bard.rb`, and `bard data` copies the same ones:
+
+```ruby
+data "public/userfiles", "storage"
+```
+
+Each sync uploads only new and changed files to `bard-data/<project>/` and deletes what was
+removed locally (the bucket's versioning keeps the old copies). When Active Storage keeps
+uploads on local disk outside every declared data path, `bard:backup` and `bard:backup:data`
+raise `Bard::Backup::UncoveredUploads` after backing up everything else, so the gap shows up
+in exception notifications instead of in a failed restore.
+
 ## Restoring
 
 Restore a database backup from S3 into the local database. The backup nearest the
