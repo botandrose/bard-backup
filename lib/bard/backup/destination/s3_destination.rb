@@ -8,7 +8,8 @@ module Bard
   class Backup
     class S3Destination < Destination
       def call
-        strategy.call(s3_tree, now)
+        upload_tree = s3_tree.object_lock_enabled? ? s3_tree.with(retain_until: Deleter.retain_until(now)) : s3_tree
+        strategy.call(upload_tree, now)
         Deleter.new(s3_tree, now).call
         Bard::Backup.new(timestamp: now, destinations: [info])
       end

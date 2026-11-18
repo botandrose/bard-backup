@@ -5,11 +5,12 @@ require "bard/backup/encryptor"
 
 module Bard
   class Backup
-    class S3Tree < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region, :session_token, :encryption_key)
+    class S3Tree < Data.define(:endpoint, :path, :access_key_id, :secret_access_key, :region, :session_token, :encryption_key, :retain_until)
       def initialize(**kwargs)
         kwargs[:endpoint] ||= "https://s3.#{kwargs[:region]}.amazonaws.com"
         kwargs[:session_token] ||= nil
         kwargs[:encryption_key] ||= nil
+        kwargs[:retain_until] ||= nil
         super
       end
 
@@ -62,11 +63,15 @@ module Bard
 
       def put_body(remote_key, body)
         body = encryptor.encrypt(body) if encryptor
-        client.put_object({
-          bucket: bucket_name,
-          key: [folder_prefix, remote_key].compact.join("/"),
-          body: body,
-        })
+        params = { bucket: bucket_name, key: [folder_prefix, remote_key].compact.join("/"), body: body }
+        params.merge!(object_lock_mode: "GOVERNANCE", object_lock_retain_until_date: retain_until) if retain_until
+        client.put_object(params)
+      end
+
+      def object_lock_enabled?
+        client.get_object_lock_configuration(bucket: bucket_name).object_lock_configuration.object_lock_enabled == "Enabled"
+      rescue Aws::S3::Errors::ObjectLockConfigurationNotFoundError
+        false
       end
 
       def mv(local_path)

@@ -62,10 +62,10 @@ Encryption at rest is opt-in per destination via an `encryption_key` in the `bar
 credentials entry — there is no DSL toggle.
 
 **Key classes**:
-- `S3Tree` — `Data.define`-based S3 wrapper used by both `S3Destination` and `FileTree`. Methods: `list_objects`, `put_file`, `put_body`, `get`, `delete_keys`, `mv`, `empty!`. Supports encryption via `Encryptor` and STS `session_token`.
+- `S3Tree` — `Data.define`-based S3 wrapper used by both `S3Destination` and `FileTree`. Methods: `list_objects`, `put_file`, `put_body`, `get`, `delete_keys`, `mv`, `empty!`, `object_lock_enabled?`. Supports encryption via `Encryptor`, STS `session_token`, and a `retain_until` that uploads under a `GOVERNANCE` Object Lock.
 - `FileTree` — syncs local data paths to S3 using a local `.bard-file-tree-sync.json` manifest (mtime+size fast path, MD5 verification, falls back to remote listing on first run)
 - `Encryptor` — AES-256-GCM with HKDF-derived keys and a deterministic IV (HMAC of plaintext), enabling content-addressable encryption
-- `Deleter` — implements the retention policy via `Filter` structs that check time-based granularities
+- `Deleter` — implements the retention policy via `Filter` structs that check time-based granularities. `Deleter.retain_until(timestamp)` gives the moment it first deletes a dump, which `S3Destination` uses as the Object Lock date when the bucket has Object Lock enabled
 - `LocalBackhoe` / `CachedLocalBackhoe` — database dump strategies (cached variant avoids conflicts when running parallel destinations)
 - `Finder` — lists backups across destinations and selects one: by timestamp (nearest match), the latest, or the most-recent as a `Bard::Backup` (with size + destination info). `#available` returns one `Bard::Backup` per timestamp (with size) for listing. Backs `Bard::Backup.available`/`.latest` and `Restore`
 - `Restore` — downloads the backup selected by `Finder`, decrypts it via `S3Tree#get`, and loads it into the local database via backhoe (drop-and-create). Backs `Bard::Backup.restore!`

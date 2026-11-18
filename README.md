@@ -101,6 +101,20 @@ production:
 The database user needs permission to create and drop the scratch database, and the server
 needs disk space for a second copy of the database while the check runs.
 
+## Object Lock
+
+When the destination bucket has S3 Object Lock enabled, each dump is uploaded under a
+`GOVERNANCE` lock that lasts exactly as long as the retention policy keeps it: 48 hours for an
+hourly dump, 30 days for the day's 00:00 dump, 26 weeks for Monday's, 24 months for the
+1st of the month's, and 25 years for January 1st's. The hourly run still deletes dumps as they
+age out, but in a locked bucket that only adds a delete marker, so a compromised server can
+hide its backups but cannot destroy them before their lock ends. Pair it with a noncurrent
+version lifecycle rule to clear each version once its lock lapses.
+
+The gem detects the lock with `GetObjectLockConfiguration` on every run, so the backup's AWS
+user needs `s3:GetBucketObjectLockConfiguration` on the bucket and `s3:PutObjectRetention` on
+its prefix. Without the first, the backup fails rather than uploading an unlocked dump.
+
 ## Restoring
 
 Restore a database backup from S3 into the local database. The backup nearest the
