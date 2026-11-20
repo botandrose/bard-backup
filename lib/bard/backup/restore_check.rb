@@ -108,7 +108,16 @@ module Bard
 
         def load(path)
           require "bard/backup/restore_check/scratch_record"
-          Backhoe::Load.new(database, path, true).call
+          if database.mysql?
+            @binlog = with_server { |connection| connection.select_value("SELECT @@log_bin").to_i == 1 }
+            with_server do |connection|
+              connection.execute("DROP DATABASE IF EXISTS #{connection.quote_table_name(name)}")
+              connection.execute("CREATE DATABASE #{connection.quote_table_name(name)}")
+            end
+            Backhoe::Load.new(database, unlogged(path), false).call
+          else
+            Backhoe::Load.new(database, path, true).call
+          end
           row_counts
         ensure
           drop
@@ -116,8 +125,37 @@ module Bard
 
         private
 
+        def name = config["database"]
+
+        # A restored copy in the binary log would fill the disk for its retention period and replicate.
+        def unlogged(path)
+          return path unless @binlog
+          File.join(File.dirname(path), "unlogged-#{File.basename(path)}").tap do |unlogged|
+            File.open(unlogged, "wb") do |file|
+              file.write(Zlib.gzip("SET SESSION sql_log_bin = 0;\n"))
+              File.open(path, "rb") { |dump| IO.copy_stream(dump, file) }
+            end
+          end
+        end
+
+        def connection_config(overrides = {})
+          hash = config.merge(overrides).to_h
+          hash["variables"] = hash.fetch("variables", {}).merge("sql_log_bin" => 0) if @binlog
+          hash
+        end
+
+        def with_server(&block)
+          server = database.postgresql? ? { "database" => "postgres" } : {}
+          hash = connection_config(server)
+          hash.delete("database") if database.mysql?
+          ScratchRecord.establish_connection(hash)
+          ScratchRecord.connection_pool.with_connection(&block)
+        ensure
+          ScratchRecord.remove_connection
+        end
+
         def row_counts
-          ScratchRecord.establish_connection(config.to_h)
+          ScratchRecord.establish_connection(connection_config)
           ScratchRecord.connection_pool.with_connection do |connection|
             connection.tables.sort.to_h do |table|
               [table, connection.select_value("SELECT COUNT(*) FROM #{connection.quote_table_name(table)}").to_i]
@@ -129,11 +167,7 @@ module Bard
         def drop
           ScratchRecord.remove_connection
           return if database.sqlite?
-          server = database.postgresql? ? config.merge("database" => "postgres") : config.except("database")
-          ScratchRecord.establish_connection(server.to_h)
-          ScratchRecord.connection_pool.with_connection { |connection| connection.drop_database(config["database"]) }
-        ensure
-          ScratchRecord.remove_connection
+          with_server { |connection| connection.drop_database(name) }
         end
       end
     end

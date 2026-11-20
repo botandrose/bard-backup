@@ -124,15 +124,52 @@ RSpec.describe Bard::Backup::RestoreCheck do
       expect(ActiveRecord::Base).not_to receive(:establish_connection)
     end
 
-    it "loads a MySQL dump into a scratch database beside the live one, and drops it even when loading fails" do
-      loaded_into = nil
-      allow(Backhoe::Load).to receive(:new) { |database, *| loaded_into = database.name; raise "mysql exited 1" }
+    let(:executed) { [] }
+    let(:load) { {} }
 
-      expect { check(nil, adapter: "trilogy") }.to raise_error("mysql exited 1")
+    def stub_load_failure
+      allow(connection).to receive(:execute) { |sql| executed << sql }
+      allow(Backhoe::Load).to receive(:new) do |database, path, drop_and_create|
+        load.merge!(name: database.name, sql: Zlib::GzipReader.zcat(StringIO.new(File.binread(path))), drop_and_create:)
+        raise "mysql exited 1"
+      end
+    end
 
-      expect(loaded_into).to eq("app_production_restore_check")
-      expect(scratch_record).to have_received(:establish_connection).with({ "adapter" => "trilogy" })
-      expect(connection).to have_received(:drop_database).with("app_production_restore_check")
+    context "when MySQL binary logging is on" do
+      before do
+        allow(connection).to receive(:select_value).with("SELECT @@log_bin").and_return(1)
+        allow(connection).to receive(:quote_table_name) { |table| "`#{table}`" }
+      end
+
+      it "keeps the scratch database out of the binary log, so it reaches neither disk nor replicas" do
+        stub_load_failure
+
+        expect { check(nil, adapter: "trilogy") }.to raise_error("mysql exited 1")
+
+        server = { "adapter" => "trilogy", "variables" => { "sql_log_bin" => 0 } }
+        expect(scratch_record).to have_received(:establish_connection).with(server).at_least(:twice)
+        expect(executed).to eq(["DROP DATABASE IF EXISTS `app_production_restore_check`", "CREATE DATABASE `app_production_restore_check`"])
+        expect(load).to eq(name: "app_production_restore_check", sql: "SET SESSION sql_log_bin = 0;\n#{dump}", drop_and_create: false)
+        expect(connection).to have_received(:drop_database).with("app_production_restore_check")
+      end
+    end
+
+    context "when MySQL binary logging is off" do
+      before do
+        allow(connection).to receive(:select_value).with("SELECT @@log_bin").and_return(0)
+        allow(connection).to receive(:quote_table_name) { |table| "`#{table}`" }
+      end
+
+      it "loads the dump as is into a fresh scratch database beside the live one, and drops it even when loading fails" do
+        stub_load_failure
+
+        expect { check(nil, adapter: "trilogy") }.to raise_error("mysql exited 1")
+
+        expect(scratch_record).to have_received(:establish_connection).with({ "adapter" => "trilogy" }).at_least(:twice)
+        expect(executed).to eq(["DROP DATABASE IF EXISTS `app_production_restore_check`", "CREATE DATABASE `app_production_restore_check`"])
+        expect(load).to eq(name: "app_production_restore_check", sql: dump, drop_and_create: false)
+        expect(connection).to have_received(:drop_database).with("app_production_restore_check")
+      end
     end
 
     it "drops a PostgreSQL scratch database from the maintenance database" do

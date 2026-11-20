@@ -99,7 +99,9 @@ production:
 ```
 
 The database user needs permission to create and drop the scratch database, and the server
-needs disk space for a second copy of the database while the check runs.
+needs disk space for a second copy of the database while the check runs. When MySQL's binary
+log is on, the check turns it off for its own session (which needs `SESSION_VARIABLES_ADMIN`),
+so the scratch copy neither fills the binary log nor reaches replicas.
 
 ## Object Lock
 
